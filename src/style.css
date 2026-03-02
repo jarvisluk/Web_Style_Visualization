@@ -1067,6 +1067,10 @@ body.tuning-open .tuning-toggle {
     width: 100%;
   }
 
+  body.tuning-open #app {
+    padding-right: 0;
+  }
+
   .style-selector-grid {
     gap: var(--spacing-sm);
   }

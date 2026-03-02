@@ -1,0 +1,22 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- 柔和的莫兰迪/粉彩风格底色 -->
+  <rect width="512" height="512" rx="116" fill="#E2E8F0" />
+
+  <!-- === 极简化的 Web UI 组建 (放大 1.3 倍以占据更多面积) === -->
+  
+  <!-- 顶部的 Header 区块：低饱和度的深蓝灰 -->
+  <rect x="74" y="72" width="364" height="78" rx="39" fill="#334155" />
+  
+  <!-- 左下午的主视觉圆形：舒适的克莱因蓝/水蓝 -->
+  <circle cx="152" cy="266" r="78" fill="#3B82F6" />
+  
+  <!-- 右下方的卡片与滑动条：纯白，用底色衬托 -->
+  <rect x="269" y="188" width="169" height="156" rx="31" fill="#FFFFFF" />
+  
+  <!-- 两个代表 "Tuning Panel" 微调小滑块的导轨：使用极浅的背景色 -->
+  <rect x="74" y="410" width="364" height="32" rx="16" fill="#CBD5E1" />
+  <!-- 点缀的滑块圆点：用一个亮色提振整体 -->
+  <circle cx="183" cy="426" r="24" fill="#F43F5E" />
+
+</svg>

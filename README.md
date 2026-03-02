@@ -1,4 +1,4 @@
-# 🎨 Web Style Visualisation
+# <img src="./public/icon.svg" alt="icon" width="28" style="vertical-align: middle;"> Web Style Visualisation
 
 [中文文档](./README_zh.md)
 

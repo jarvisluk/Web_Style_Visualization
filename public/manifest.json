@@ -1,6 +1,6 @@
 {
   "name": "Web Style Visualisation",
-  "short_name": "网页风格可视化",
+  "short_name": "Web Vis",
   "start_url": "/Web_Style_Visualization/",
   "display": "standalone",
   "background_color": "#E2E8F0",

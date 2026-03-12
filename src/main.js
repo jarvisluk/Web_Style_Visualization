@@ -28,8 +28,12 @@ function init() {
   // Toggle buttons
   const tuningToggle = document.getElementById("tuning-toggle");
   const tuningPanel = document.getElementById("tuning-panel");
-  // Default open — sync body class
-  document.body.classList.add("tuning-open");
+  // Default open on desktop, collapsed on mobile
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (!isMobile) {
+    tuningPanel.classList.add("open");
+    document.body.classList.add("tuning-open");
+  }
   tuningToggle.addEventListener("click", () => {
     tuningPanel.classList.toggle("open");
     document.body.classList.toggle("tuning-open");

@@ -28,12 +28,16 @@ function init() {
   // Toggle buttons
   const tuningToggle = document.getElementById("tuning-toggle");
   const tuningPanel = document.getElementById("tuning-panel");
-  // Default open on desktop, collapsed on mobile
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
-  if (!isMobile) {
-    tuningPanel.classList.add("open");
+  // Default behaviour: open on desktop, closed on mobile
+  const isDesktop = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+  if (isDesktop) {
     document.body.classList.add("tuning-open");
+    tuningPanel.classList.add("open");
+  } else {
+    document.body.classList.remove("tuning-open");
+    tuningPanel.classList.remove("open");
   }
+
   tuningToggle.addEventListener("click", () => {
     tuningPanel.classList.toggle("open");
     document.body.classList.toggle("tuning-open");

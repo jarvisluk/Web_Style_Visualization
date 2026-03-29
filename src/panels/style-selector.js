@@ -58,8 +58,9 @@ export function renderStyleSelector(container) {
     if (activeId) {
       updateActiveState(grid, activeId);
     } else if (STYLE_LIST.length > 0) {
-      // Apply default style if none active
-      const defaultStyle = STYLE_LIST.find((s) => s.id === "material") || STYLE_LIST[0];
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const defaultId = prefersDark ? "dark-mode" : "material";
+      const defaultStyle = STYLE_LIST.find((s) => s.id === defaultId) || STYLE_LIST[0];
       applyStyle(defaultStyle.id);
       updateActiveState(grid, defaultStyle.id);
     }
@@ -67,7 +68,8 @@ export function renderStyleSelector(container) {
     // Scroll initialization
     if (!hasInitialScrolled) {
       requestAnimationFrame(() => {
-        const idToScroll = getCurrentStyleId() || "material";
+        const prefersDarkScroll = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const idToScroll = getCurrentStyleId() || (prefersDarkScroll ? "dark-mode" : "material");
         const activeCard = grid.querySelector(`.style-card[data-style-id="${idToScroll}"]`);
         if (activeCard) {
           const scrollLeft = activeCard.offsetLeft - (grid.clientWidth / 2) + (activeCard.offsetWidth / 2);

@@ -158,12 +158,6 @@ function applyProxy(url) {
 
   if (!corsProxyUrl) return url;
   const proxy = corsProxyUrl.replace(/\/+$/, "");
-  try {
-    const proxyHost = new URL(proxy).hostname;
-    if (proxyHost === "corsproxy.io" || proxyHost.endsWith(".corsproxy.io")) {
-      return `${proxy}/?url=${encodeURIComponent(url)}`;
-    }
-  } catch {}
   return `${proxy}/${url}`;
 }
 

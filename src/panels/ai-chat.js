@@ -481,6 +481,12 @@ export function renderAIChat(container) {
           statusMsg.textContent = t("ai.keyNetworkError");
           statusMsg.className = "ai-chat-key-verify-status warning";
           setTimeout(() => renderKeySection(), 1500);
+        } else if (result.error && result.error.startsWith("QUOTA_EXCEEDED:")) {
+          saveBtn.disabled = false;
+          input.disabled = false;
+          const apiDetail = result.error.slice("QUOTA_EXCEEDED:".length).trim();
+          statusMsg.textContent = t("ai.error.quotaExceeded") + (apiDetail ? "\n(" + apiDetail + ")" : "");
+          statusMsg.className = "ai-chat-key-verify-status error";
         } else {
           saveBtn.disabled = false;
           input.disabled = false;

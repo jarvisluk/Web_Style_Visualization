@@ -370,7 +370,13 @@ export async function validateApiKey(key) {
     }
     if (response.ok) return { valid: true };
     if (response.status === 401 || response.status === 403) return { valid: false, error: "API_KEY_INVALID" };
-    if (response.status === 429) return { valid: false, error: "RATE_LIMITED" };
+    if (response.status === 429) {
+      const detail = await extractErrorDetail(response);
+      if (detail && /quota|billing|exceeded|insufficient|plan|budget|credit/i.test(detail)) {
+        return { valid: false, error: "QUOTA_EXCEEDED:" + detail };
+      }
+      return { valid: false, error: "RATE_LIMITED" };
+    }
     return { valid: false, error: `API_ERROR_${response.status}` };
   } catch {
     return { valid: false, error: "NETWORK_ERROR" };
@@ -588,13 +594,28 @@ function buildRequestPayload(userText, history) {
   return { key, baseUrl, model, messages };
 }
 
-function handleResponseStatus(response) {
+async function handleResponseStatus(response) {
   if (!response.ok) {
     const status = response.status;
     if (status === 401 || status === 403) throw new Error("API_KEY_INVALID");
-    if (status === 429) throw new Error("RATE_LIMITED");
+    if (status === 429) {
+      const detail = await extractErrorDetail(response);
+      if (detail && /quota|billing|exceeded|insufficient|plan|budget|credit/i.test(detail)) {
+        throw new Error("QUOTA_EXCEEDED:" + detail);
+      }
+      throw new Error("RATE_LIMITED");
+    }
     if (status === 500 || status === 503) throw new Error("SERVER_ERROR");
     throw new Error(`API_ERROR_${status}`);
+  }
+}
+
+async function extractErrorDetail(response) {
+  try {
+    const body = await response.clone().json();
+    return body?.error?.message || body?.error?.type || body?.message || "";
+  } catch {
+    return "";
   }
 }
 
@@ -642,7 +663,7 @@ export async function chatWithAIStreaming(userText, history = [], { onToken, onD
     throw new Error("NETWORK_ERROR");
   }
 
-  handleResponseStatus(response);
+  await handleResponseStatus(response);
 
   if (!response.body) {
     return chatWithAIFallback(userText, history, { onToken, onDone, onError, signal });
@@ -753,7 +774,7 @@ export async function generateRandomStylePrompt({ signal } = {}) {
     throw new Error("NETWORK_ERROR");
   }
 
-  handleResponseStatus(response);
+  await handleResponseStatus(response);
 
   let data;
   try {
@@ -790,7 +811,7 @@ export async function chatWithAI(userText, history = []) {
     throw new Error("NETWORK_ERROR");
   }
 
-  handleResponseStatus(response);
+  await handleResponseStatus(response);
 
   let data;
   try {

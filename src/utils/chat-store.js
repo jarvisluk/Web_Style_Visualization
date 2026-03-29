@@ -116,12 +116,18 @@ export function createChatStore() {
   }
 
   function handleError(err, assistantMsgId) {
-    const errorKey = getErrorI18nKey(err.message || "UNKNOWN");
+    const rawMsg = err.message || "UNKNOWN";
+    const errorKey = getErrorI18nKey(rawMsg);
+    let errorText = t(errorKey);
+    if (rawMsg.startsWith("QUOTA_EXCEEDED:")) {
+      const apiDetail = rawMsg.slice("QUOTA_EXCEEDED:".length).trim();
+      if (apiDetail) errorText += "\n(" + apiDetail + ")";
+    }
     const assistantMsg = {
       id: assistantMsgId,
       role: "assistant",
       explanation: "",
-      error: t(errorKey),
+      error: errorText,
       originalUserText: getLastUserText(),
     };
     state.messages = [...state.messages, assistantMsg];
@@ -221,6 +227,7 @@ export function createChatStore() {
 }
 
 function getErrorI18nKey(errorMessage) {
+  if (errorMessage.startsWith("QUOTA_EXCEEDED:")) return "ai.error.quotaExceeded";
   switch (errorMessage) {
     case "API_KEY_MISSING": return "ai.error.noKey";
     case "API_KEY_INVALID": return "ai.error.invalidKey";

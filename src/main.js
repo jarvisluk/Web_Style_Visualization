@@ -8,6 +8,7 @@ import { renderButtons } from "./components/buttons.js";
 import { renderStats } from "./components/stats.js";
 
 // Panels
+import { renderAIChat } from "./panels/ai-chat.js";
 import { renderStyleSelector } from "./panels/style-selector.js";
 import { renderTuningPanel } from "./panels/tuning-panel.js";
 import { renderCodePanel } from "./panels/code-panel.js";
@@ -15,6 +16,7 @@ import { renderCodePanel } from "./panels/code-panel.js";
 function init() {
   // Render all components
   renderNavbar(document.getElementById("navbar"));
+  renderAIChat(document.getElementById("ai-chat"));
   renderStyleSelector(document.getElementById("style-selector"));
   renderHero(document.getElementById("hero"));
   renderCards(document.getElementById("cards"));

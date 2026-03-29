@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.openai.com https://opencode.ai; manifest-src 'self';" />
   <title>Web Style Visualisation</title>
   <meta name="description" content="Interactive web style visualization tool: choose a design style, switch site UI live, fine‑tune parameters, and export CSS." />
   <meta property="og:title" content="Web Style Visualisation" />
@@ -24,6 +25,9 @@
   <div id="app">
     <!-- Navbar -->
     <nav id="navbar" class="navbar"></nav>
+
+    <!-- AI Chat -->
+    <section id="ai-chat" class="ai-chat-section section-block"></section>
 
     <!-- Style Selector -->
     <section id="style-selector" class="style-selector-section"></section>

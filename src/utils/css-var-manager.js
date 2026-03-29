@@ -6,6 +6,8 @@ const VARIABLE_DEFINITIONS = [
   "--border-radius", "--border-width", "--border-color",
   "--shadow-x", "--shadow-y", "--shadow-blur", "--shadow-spread", "--shadow-color",
   "--font-family", "--font-weight", "--font-weight-bold",
+  "--font-size-base", "--font-size-sm", "--font-size-lg", "--font-size-xl", "--font-size-xxl",
+  "--line-height",
   "--backdrop-blur", "--bg-opacity", "--glow-intensity", "--glow-color"
 ];
 
@@ -70,14 +72,17 @@ export function getComputedVariable(name) {
  * Parses :root { --var: value; } blocks or plain --var: value; lines.
  */
 let customStyle = null;
+const ALLOWED_SET = new Set(VARIABLE_DEFINITIONS);
 
 export function applyCustomVariables(cssText) {
   const variables = {};
-  // Match --variable: value patterns
   const regex = /(--[\w-]+)\s*:\s*([^;]+)/g;
   let match;
   while ((match = regex.exec(cssText)) !== null) {
-    variables[match[1].trim()] = match[2].trim();
+    const name = match[1].trim();
+    if (ALLOWED_SET.has(name)) {
+      variables[name] = match[2].trim();
+    }
   }
 
   if (Object.keys(variables).length === 0) return false;
@@ -104,6 +109,49 @@ export function applyCustomVariables(cssText) {
   });
 
   Object.entries(variables).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
+
+  notifyListeners();
+  return true;
+}
+
+/**
+ * Apply pre-validated CSS variables from an object (used by AI chat).
+ * Only accepts known variable names from VARIABLE_DEFINITIONS.
+ */
+export function applyValidatedVariables(variables) {
+  const filtered = {};
+  for (const [key, value] of Object.entries(variables)) {
+    if (ALLOWED_SET.has(key)) {
+      filtered[key] = value;
+    }
+  }
+
+  if (Object.keys(filtered).length === 0) return false;
+
+  customStyle = {
+    id: "custom",
+    name: "AI Generated",
+    nameZh: "AI 生成",
+    category: "custom",
+    description: "AI-generated custom CSS variables",
+    descriptionZh: "AI 生成的自定义 CSS 变量",
+    author: "ai",
+    variables: filtered,
+    specialTuning: [],
+    keyProperties: [{ property: "AI generated", explanation: "AI 生成的风格" }]
+  };
+
+  currentStyleId = "custom";
+  overrides = {};
+  const root = document.documentElement;
+
+  VARIABLE_DEFINITIONS.forEach((varName) => {
+    root.style.removeProperty(varName);
+  });
+
+  Object.entries(filtered).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
 

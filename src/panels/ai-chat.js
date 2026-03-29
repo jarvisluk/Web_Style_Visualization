@@ -6,6 +6,7 @@ import {
   getModel, setModel,
   getCustomModel, setCustomModel,
   getCorsProxy, setCorsProxy, needsCorsProxy,
+  fetchAvailableModels, clearModelCache,
 } from "../utils/ai-service.js";
 import { t, getLang, onLangChange } from "../utils/i18n.js";
 import { createChatStore } from "../utils/chat-store.js";
@@ -375,20 +376,16 @@ export function renderAIChat(container) {
     }
 
     {
-      const currentProvider = PROVIDERS[getProviderId()];
-      const modelValue = getProviderId() === "custom" ? getCustomModel() : getModel();
-      section.appendChild(buildCustomRow(
-        t("ai.model"),
-        currentProvider.defaultModel,
-        modelValue,
-        (val) => {
-          if (getProviderId() === "custom") {
-            setCustomModel(val);
-          } else {
-            setModel(val);
-          }
-        }
-      ));
+      const modelRow = el("div", "ai-chat-provider-custom-row ai-chat-model-row");
+      const modelLabel = el("span", "ai-chat-provider-custom-label");
+      modelLabel.textContent = t("ai.model");
+      modelRow.appendChild(modelLabel);
+
+      const modelContainer = el("div", "ai-chat-model-container");
+      modelRow.appendChild(modelContainer);
+      section.appendChild(modelRow);
+
+      renderModelSelector(modelContainer);
     }
 
     if (needsCorsProxy()) {
@@ -420,6 +417,111 @@ export function renderAIChat(container) {
     return row;
   }
 
+  // ── Model selector with auto-fetch dropdown ──
+
+  function renderModelSelector(container) {
+    container.innerHTML = "";
+    const currentProvider = PROVIDERS[getProviderId()];
+    const currentModel = getProviderId() === "custom" ? getCustomModel() : getModel();
+    const hasKey = !!getApiKey();
+    const hasModelsEndpoint = currentProvider.modelsEndpoint;
+
+    function saveModel(val) {
+      if (getProviderId() === "custom") {
+        setCustomModel(val);
+      } else {
+        setModel(val);
+      }
+    }
+
+    if (!hasKey || !hasModelsEndpoint) {
+      const input = el("input", "ai-chat-provider-custom-input");
+      input.type = "text";
+      input.placeholder = currentProvider.defaultModel;
+      input.value = currentModel;
+      input.addEventListener("change", () => saveModel(input.value.trim()));
+      container.appendChild(input);
+      return;
+    }
+
+    const loadingMsg = el("span", "ai-chat-model-loading");
+    loadingMsg.textContent = t("ai.modelLoading");
+    container.appendChild(loadingMsg);
+
+    fetchAvailableModels(getApiKey()).then(models => {
+      container.innerHTML = "";
+
+      if (!models || models.length === 0) {
+        const input = el("input", "ai-chat-provider-custom-input");
+        input.type = "text";
+        input.placeholder = currentProvider.defaultModel;
+        input.value = currentModel;
+        input.addEventListener("change", () => saveModel(input.value.trim()));
+        container.appendChild(input);
+
+        const tip = el("div", "ai-chat-provider-tip");
+        tip.textContent = t("ai.modelFetchFail");
+        container.appendChild(tip);
+        return;
+      }
+
+      const wrapper = el("div", "ai-chat-model-select-wrap");
+
+      const select = el("select", "ai-chat-model-select");
+      const activeModel = currentModel || currentProvider.defaultModel;
+
+      let hasActive = false;
+      for (const m of models) {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.name || m.id;
+        if (m.id === activeModel) {
+          opt.selected = true;
+          hasActive = true;
+        }
+        select.appendChild(opt);
+      }
+
+      const customOpt = document.createElement("option");
+      customOpt.value = "__custom__";
+      customOpt.textContent = t("ai.modelCustom");
+      select.appendChild(customOpt);
+
+      if (!hasActive && activeModel) {
+        const extra = document.createElement("option");
+        extra.value = activeModel;
+        extra.textContent = activeModel;
+        extra.selected = true;
+        select.insertBefore(extra, customOpt);
+      }
+
+      const customInput = el("input", "ai-chat-provider-custom-input ai-chat-model-custom-input");
+      customInput.type = "text";
+      customInput.placeholder = currentProvider.defaultModel;
+      customInput.style.display = "none";
+      customInput.addEventListener("change", () => saveModel(customInput.value.trim()));
+
+      select.addEventListener("change", () => {
+        if (select.value === "__custom__") {
+          customInput.style.display = "";
+          customInput.focus();
+        } else {
+          customInput.style.display = "none";
+          saveModel(select.value);
+        }
+      });
+
+      wrapper.appendChild(select);
+      wrapper.appendChild(customInput);
+      container.appendChild(wrapper);
+    });
+  }
+
+  function refreshModelSelector() {
+    const modelContainer = $providerContainer.querySelector(".ai-chat-model-container");
+    if (modelContainer) renderModelSelector(modelContainer);
+  }
+
   // ── Key section (rebuilt only when key state changes) ──
 
   function renderKeySection() {
@@ -436,7 +538,9 @@ export function renderAIChat(container) {
       clearBtn.textContent = t("ai.keyClear");
       clearBtn.addEventListener("click", () => {
         store.removeApiKey();
+        clearModelCache();
         renderKeySection();
+        refreshModelSelector();
       });
       row.appendChild(status);
       row.appendChild(clearBtn);
@@ -476,11 +580,12 @@ export function renderAIChat(container) {
         if (result.valid) {
           store.updateApiKey(val, rememberCheck.checked);
           renderKeySection();
+          refreshModelSelector();
         } else if (result.error === "NETWORK_ERROR") {
           store.updateApiKey(val, rememberCheck.checked);
           statusMsg.textContent = t("ai.keyNetworkError");
           statusMsg.className = "ai-chat-key-verify-status warning";
-          setTimeout(() => renderKeySection(), 1500);
+          setTimeout(() => { renderKeySection(); refreshModelSelector(); }, 1500);
         } else if (result.error && result.error.startsWith("QUOTA_EXCEEDED:")) {
           saveBtn.disabled = false;
           input.disabled = false;

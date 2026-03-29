@@ -60,6 +60,7 @@ let corsProxyUrl = localStorage.getItem("ai_cors_proxy") || "";
 let apiKey = null;
 let rememberKey = false;
 let providerChangeListeners = [];
+const modelListCache = {};
 
 function modelStorageKey(providerId) {
   return `ai_model_${providerId}`;
@@ -380,6 +381,72 @@ export async function validateApiKey(key) {
     return { valid: false, error: `API_ERROR_${response.status}` };
   } catch {
     return { valid: false, error: "NETWORK_ERROR" };
+  }
+}
+
+export async function fetchAvailableModels(key) {
+  const provider = getProvider();
+  const format = getProviderFormat();
+  const baseUrl = getActiveBaseUrl();
+  if (!baseUrl || !key) return [];
+
+  if (format === "claude") return [];
+
+  const cacheKey = `${currentProviderId}:${baseUrl}`;
+  if (modelListCache[cacheKey]) return modelListCache[cacheKey];
+
+  try {
+    let url, headers;
+    if (format === "gemini") {
+      url = applyProxy(`${baseUrl}/models?key=${encodeURIComponent(key)}`);
+      headers = {};
+    } else {
+      url = applyProxy(`${baseUrl}/models`);
+      headers = { "Authorization": `Bearer ${key}` };
+    }
+
+    const response = await fetch(url, { method: "GET", headers });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    let models = [];
+
+    if (format === "gemini") {
+      models = (data.models || [])
+        .map(m => {
+          const id = m.name?.replace(/^models\//, "") || "";
+          return { id, name: m.displayName || id };
+        })
+        .filter(m => m.id);
+    } else {
+      models = (data.data || data.models || [])
+        .map(m => {
+          const id = typeof m === "string" ? m : (m.id || m.model || "");
+          return { id, name: id };
+        })
+        .filter(m => m.id);
+    }
+
+    models.sort((a, b) => a.id.localeCompare(b.id));
+
+    if (!models.find(m => m.id === provider.defaultModel)) {
+      models.unshift({ id: provider.defaultModel, name: provider.defaultModel + " (default)" });
+    }
+
+    modelListCache[cacheKey] = models;
+    return models;
+  } catch {
+    return [];
+  }
+}
+
+export function clearModelCache(providerId) {
+  if (providerId) {
+    for (const key of Object.keys(modelListCache)) {
+      if (key.startsWith(providerId + ":")) delete modelListCache[key];
+    }
+  } else {
+    for (const key of Object.keys(modelListCache)) delete modelListCache[key];
   }
 }
 

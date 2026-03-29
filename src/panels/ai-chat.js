@@ -1,6 +1,6 @@
 import {
   getApiKey, setApiKey, clearApiKey,
-  validateApiKey,
+  validateApiKey, generateRandomStylePrompt,
   PROVIDERS, getProviderId, setProvider,
   getCustomBaseUrl, setCustomBaseUrl,
   getModel, setModel,
@@ -129,14 +129,75 @@ export function renderAIChat(container) {
     // Input area
     const inputArea = el("div", "ai-chat-input-area");
 
+    const randomWrap = el("div", "ai-chat-random-wrap");
     const randomBtn = el("button", "btn btn-ghost ai-chat-random");
     randomBtn.title = t("ai.randomTip");
-    randomBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>`;
+    const shuffleIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>`;
+    randomBtn.innerHTML = shuffleIcon;
+
+    const randomMenu = el("div", "ai-chat-random-menu");
+    randomMenu.style.display = "none";
+
+    function buildRandomMenu() {
+      randomMenu.innerHTML = "";
+
+      const localItem = el("button", "ai-chat-random-menu-item");
+      localItem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg><span>${t("ai.randomLocal")}</span>`;
+      localItem.addEventListener("click", () => {
+        randomMenu.style.display = "none";
+        $textarea.value = getRandomPrompt();
+        autoGrow($textarea);
+        $textarea.focus();
+      });
+      randomMenu.appendChild(localItem);
+
+      if (getApiKey()) {
+        const aiItem = el("button", "ai-chat-random-menu-item ai-chat-random-menu-item-ai");
+        aiItem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.2-.5 2.3-1.4 3H9.4A4 4 0 0 1 12 2z"/><path d="M12 9v4"/><path d="M8 13h8"/><circle cx="9" cy="17" r="2"/><circle cx="15" cy="17" r="2"/><path d="M7 17H5a2 2 0 0 1-2-2V9"/><path d="M17 17h2a2 2 0 0 0 2-2V9"/></svg><span>${t("ai.randomAI")}</span>`;
+        aiItem.addEventListener("click", async () => {
+          randomMenu.style.display = "none";
+          randomBtn.disabled = true;
+          randomBtn.classList.add("loading");
+          randomBtn.innerHTML = `<span class="ai-chat-random-spinner"></span>`;
+          try {
+            const prompt = await generateRandomStylePrompt();
+            $textarea.value = prompt;
+            autoGrow($textarea);
+            $textarea.focus();
+          } catch {
+            $textarea.value = getRandomPrompt();
+            autoGrow($textarea);
+            $textarea.focus();
+          } finally {
+            randomBtn.disabled = false;
+            randomBtn.classList.remove("loading");
+            randomBtn.innerHTML = shuffleIcon;
+          }
+        });
+        randomMenu.appendChild(aiItem);
+      }
+    }
+
+    let menuCloseTimer;
     randomBtn.addEventListener("click", () => {
-      $textarea.value = getRandomPrompt();
-      autoGrow($textarea);
-      $textarea.focus();
+      if (!getApiKey()) {
+        $textarea.value = getRandomPrompt();
+        autoGrow($textarea);
+        $textarea.focus();
+        return;
+      }
+      buildRandomMenu();
+      const isVisible = randomMenu.style.display !== "none";
+      randomMenu.style.display = isVisible ? "none" : "";
     });
+
+    randomWrap.addEventListener("mouseenter", () => clearTimeout(menuCloseTimer));
+    randomWrap.addEventListener("mouseleave", () => {
+      menuCloseTimer = setTimeout(() => { randomMenu.style.display = "none"; }, 300);
+    });
+
+    randomWrap.appendChild(randomBtn);
+    randomWrap.appendChild(randomMenu);
 
     $textarea = el("textarea", "ai-chat-input");
     $textarea.placeholder = t("ai.inputPlaceholder");
@@ -159,7 +220,7 @@ export function renderAIChat(container) {
     $stopBtn.style.display = "none";
     $stopBtn.addEventListener("click", () => store.abort());
 
-    inputArea.appendChild(randomBtn);
+    inputArea.appendChild(randomWrap);
     inputArea.appendChild($textarea);
     inputArea.appendChild($sendBtn);
     inputArea.appendChild($stopBtn);
@@ -289,6 +350,18 @@ export function renderAIChat(container) {
     if (getProviderId() === "opencode_zen") {
       const tip = el("div", "ai-chat-provider-tip");
       tip.innerHTML = `<a href="https://opencode.ai/auth" target="_blank" rel="noopener noreferrer">${t("ai.providerOpenCodeZenTip")}</a>`;
+      section.appendChild(tip);
+    }
+
+    if (getProviderId() === "gemini") {
+      const tip = el("div", "ai-chat-provider-tip");
+      tip.innerHTML = `<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">${t("ai.providerGeminiTip")}</a>`;
+      section.appendChild(tip);
+    }
+
+    if (getProviderId() === "claude") {
+      const tip = el("div", "ai-chat-provider-tip");
+      tip.innerHTML = `<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">${t("ai.providerClaudeTip")}</a>`;
       section.appendChild(tip);
     }
 

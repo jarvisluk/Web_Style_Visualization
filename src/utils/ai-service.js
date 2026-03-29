@@ -10,6 +10,27 @@ export const PROVIDERS = {
     modelsEndpoint: true,
     keyPrefix: "sk-",
     browserCors: true,
+    format: "openai",
+  },
+  gemini: {
+    id: "gemini",
+    name: "Google Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    defaultModel: "gemini-2.0-flash",
+    modelsEndpoint: true,
+    keyPrefix: "AI",
+    browserCors: true,
+    format: "gemini",
+  },
+  claude: {
+    id: "claude",
+    name: "Anthropic Claude",
+    baseUrl: "https://api.anthropic.com/v1",
+    defaultModel: "claude-sonnet-4-20250514",
+    modelsEndpoint: false,
+    keyPrefix: "sk-ant-",
+    browserCors: true,
+    format: "claude",
   },
   opencode_zen: {
     id: "opencode_zen",
@@ -19,6 +40,7 @@ export const PROVIDERS = {
     modelsEndpoint: true,
     keyPrefix: "",
     browserCors: false,
+    format: "openai",
   },
   custom: {
     id: "custom",
@@ -28,6 +50,7 @@ export const PROVIDERS = {
     modelsEndpoint: false,
     keyPrefix: "",
     browserCors: false,
+    format: "openai",
   },
 };
 
@@ -180,17 +203,179 @@ export function clearApiKey() {
   localStorage.removeItem(storageKeyFor(currentProviderId));
 }
 
+function getProviderFormat() {
+  return getProvider().format || "openai";
+}
+
+function buildRequestHeaders(format, key) {
+  const headers = { "Content-Type": "application/json" };
+  switch (format) {
+    case "gemini":
+      break;
+    case "claude":
+      headers["x-api-key"] = key;
+      headers["anthropic-version"] = "2023-06-01";
+      headers["anthropic-dangerous-direct-browser-access"] = "true";
+      break;
+    default:
+      headers["Authorization"] = `Bearer ${key}`;
+      break;
+  }
+  return headers;
+}
+
+function convertMessagesForGemini(messages) {
+  let systemInstruction = null;
+  const contents = [];
+  for (const msg of messages) {
+    if (msg.role === "system") {
+      systemInstruction = { parts: [{ text: msg.content }] };
+    } else {
+      contents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      });
+    }
+  }
+  return { systemInstruction, contents };
+}
+
+function buildStreamUrl(format, baseUrl, model, key) {
+  switch (format) {
+    case "gemini":
+      return `${baseUrl}/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
+    case "claude":
+      return `${baseUrl}/messages`;
+    default:
+      return `${baseUrl}/chat/completions`;
+  }
+}
+
+function buildNonStreamUrl(format, baseUrl, model, key) {
+  switch (format) {
+    case "gemini":
+      return `${baseUrl}/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+    case "claude":
+      return `${baseUrl}/messages`;
+    default:
+      return `${baseUrl}/chat/completions`;
+  }
+}
+
+function buildRequestBody(format, model, messages, stream) {
+  switch (format) {
+    case "gemini": {
+      const { systemInstruction, contents } = convertMessagesForGemini(messages);
+      const body = {
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1000 },
+      };
+      if (systemInstruction) body.systemInstruction = systemInstruction;
+      return body;
+    }
+    case "claude": {
+      let system = "";
+      const claudeMessages = [];
+      for (const msg of messages) {
+        if (msg.role === "system") {
+          system = msg.content;
+        } else {
+          claudeMessages.push({ role: msg.role, content: msg.content });
+        }
+      }
+      const body = {
+        model,
+        max_tokens: 1000,
+        messages: claudeMessages,
+        temperature: 0.7,
+      };
+      if (system) body.system = system;
+      if (stream) body.stream = true;
+      return body;
+    }
+    default: {
+      const body = {
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1000,
+      };
+      if (stream) body.stream = true;
+      return body;
+    }
+  }
+}
+
+function parseSSEChunksByFormat(format, text) {
+  if (format === "openai" || !format) return parseSSEChunks(text);
+
+  const tokens = [];
+  const lines = text.split("\n");
+  for (const line of lines) {
+    if (!line.startsWith("data: ")) continue;
+    const data = line.slice(6).trim();
+    if (!data || data === "[DONE]") continue;
+    try {
+      const parsed = JSON.parse(data);
+      if (format === "gemini") {
+        const t = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (t) tokens.push(t);
+      } else if (format === "claude") {
+        if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+          tokens.push(parsed.delta.text);
+        }
+      }
+    } catch { /* skip malformed */ }
+  }
+  return tokens;
+}
+
+function extractNonStreamingContent(format, data) {
+  switch (format) {
+    case "gemini":
+      return data.candidates?.[0]?.content?.parts?.[0]?.text;
+    case "claude":
+      return data.content?.[0]?.text;
+    default:
+      return data.choices?.[0]?.message?.content;
+  }
+}
+
 export async function validateApiKey(key) {
   const baseUrl = getActiveBaseUrl();
   if (!baseUrl) return { valid: false, error: "NO_BASE_URL" };
 
+  const format = getProviderFormat();
+
   try {
-    const response = await fetch(applyProxy(`${baseUrl}/models`), {
-      method: "GET",
-      headers: { "Authorization": `Bearer ${key}` }
-    });
+    let response;
+    switch (format) {
+      case "gemini":
+        response = await fetch(
+          applyProxy(`${baseUrl}/models?key=${encodeURIComponent(key)}`),
+          { method: "GET" }
+        );
+        break;
+      case "claude":
+        response = await fetch(applyProxy(`${baseUrl}/messages`), {
+          method: "POST",
+          headers: buildRequestHeaders("claude", key),
+          body: JSON.stringify({
+            model: getActiveModel(),
+            max_tokens: 1,
+            messages: [{ role: "user", content: "hi" }],
+          }),
+        });
+        break;
+      default:
+        response = await fetch(applyProxy(`${baseUrl}/models`), {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${key}` },
+        });
+        break;
+    }
     if (response.ok) return { valid: true };
-    if (response.status === 401) return { valid: false, error: "API_KEY_INVALID" };
+    if (response.status === 401 || response.status === 403) return { valid: false, error: "API_KEY_INVALID" };
     if (response.status === 429) return { valid: false, error: "RATE_LIMITED" };
     return { valid: false, error: `API_ERROR_${response.status}` };
   } catch {
@@ -412,7 +597,7 @@ function buildRequestPayload(userText, history) {
 function handleResponseStatus(response) {
   if (!response.ok) {
     const status = response.status;
-    if (status === 401) throw new Error("API_KEY_INVALID");
+    if (status === 401 || status === 403) throw new Error("API_KEY_INVALID");
     if (status === 429) throw new Error("RATE_LIMITED");
     if (status === 500 || status === 503) throw new Error("SERVER_ERROR");
     throw new Error(`API_ERROR_${status}`);
@@ -445,22 +630,17 @@ function parseSSEChunks(text) {
  */
 export async function chatWithAIStreaming(userText, history = [], { onToken, onDone, onError, signal } = {}) {
   const { key, baseUrl, model, messages } = buildRequestPayload(userText, history);
+  const format = getProviderFormat();
+  const url = applyProxy(buildStreamUrl(format, baseUrl, model, key));
+  const headers = buildRequestHeaders(format, key);
+  const body = buildRequestBody(format, model, messages, true);
 
   let response;
   try {
-    response = await fetch(applyProxy(`${baseUrl}/chat/completions`), {
+    response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: true,
-      }),
+      headers,
+      body: JSON.stringify(body),
       signal,
     });
   } catch (fetchErr) {
@@ -489,7 +669,7 @@ export async function chatWithAIStreaming(userText, history = [], { onToken, onD
       sseBuffer = parts.pop() || "";
 
       for (const part of parts) {
-        const tokens = parseSSEChunks(part);
+        const tokens = parseSSEChunksByFormat(format, part);
         for (const token of tokens) {
           fullText += token;
           if (onToken) onToken(token);
@@ -498,7 +678,7 @@ export async function chatWithAIStreaming(userText, history = [], { onToken, onD
     }
 
     if (sseBuffer.trim()) {
-      const tokens = parseSSEChunks(sseBuffer);
+      const tokens = parseSSEChunksByFormat(format, sseBuffer);
       for (const token of tokens) {
         fullText += token;
         if (onToken) onToken(token);
@@ -528,27 +708,89 @@ async function chatWithAIFallback(userText, history, { onDone, onError }) {
   }
 }
 
+export async function generateRandomStylePrompt({ signal } = {}) {
+  const key = getApiKey();
+  if (!key) throw new Error("API_KEY_MISSING");
+
+  const baseUrl = getActiveBaseUrl();
+  if (!baseUrl) throw new Error("NO_BASE_URL");
+
+  const model = getActiveModel();
+  const format = getProviderFormat();
+  const lang = getLang();
+
+  const systemPrompt = lang === "zh"
+    ? `你是一个富有创意的网页设计灵感生成器。请生成一段简短的（1-2句话）、有创意的网页设计风格描述，用作CSS样式生成器的输入提示。描述应包含风格主题、配色方案和视觉特征。仅输出描述文本，不要包含任何解释或格式。每次生成完全不同的风格。`
+    : `You are a creative web design inspiration generator. Generate a short (1-2 sentences), creative web design style description to be used as an input prompt for a CSS style generator. The description should include a style theme, color scheme, and visual characteristics. Output ONLY the description text, no explanations or formatting. Generate a completely different style each time.`;
+
+  const userMsg = lang === "zh"
+    ? "请生成一个独特的网页设计风格描述。"
+    : "Generate a unique web design style description.";
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userMsg },
+  ];
+  const url = applyProxy(buildNonStreamUrl(format, baseUrl, model, key));
+  const headers = buildRequestHeaders(format, key);
+
+  const bodyObj = buildRequestBody(format, model, messages, false);
+  if (format === "gemini") {
+    bodyObj.generationConfig.temperature = 1.2;
+    bodyObj.generationConfig.maxOutputTokens = 150;
+  } else if (format === "claude") {
+    bodyObj.temperature = 1.0;
+    bodyObj.max_tokens = 150;
+  } else {
+    bodyObj.temperature = 1.2;
+    bodyObj.max_tokens = 150;
+  }
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(bodyObj),
+      signal,
+    });
+  } catch (fetchErr) {
+    if (fetchErr.name === "AbortError") throw fetchErr;
+    throw new Error("NETWORK_ERROR");
+  }
+
+  handleResponseStatus(response);
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("RESPONSE_NOT_JSON");
+  }
+
+  const content = extractNonStreamingContent(format, data)?.trim();
+  if (!content) throw new Error("EMPTY_RESPONSE");
+
+  return content;
+}
+
 /**
  * Non-streaming fallback. Kept for compatibility and providers that
  * don't support streaming.
  */
 export async function chatWithAI(userText, history = []) {
   const { key, baseUrl, model, messages } = buildRequestPayload(userText, history);
+  const format = getProviderFormat();
+  const url = applyProxy(buildNonStreamUrl(format, baseUrl, model, key));
+  const headers = buildRequestHeaders(format, key);
+  const body = buildRequestBody(format, model, messages, false);
 
   let response;
   try {
-    response = await fetch(applyProxy(`${baseUrl}/chat/completions`), {
+    response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000
-      })
+      headers,
+      body: JSON.stringify(body),
     });
   } catch {
     throw new Error("NETWORK_ERROR");
@@ -563,7 +805,7 @@ export async function chatWithAI(userText, history = []) {
     throw new Error("RESPONSE_NOT_JSON");
   }
 
-  const content = data.choices?.[0]?.message?.content;
+  const content = extractNonStreamingContent(format, data);
   if (!content) throw new Error("EMPTY_RESPONSE");
 
   return parseAIResponse(content);

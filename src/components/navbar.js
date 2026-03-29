@@ -17,6 +17,7 @@ export function renderNavbar(container) {
       <ul class="navbar-links">
         <li><a href="#hero">${t("nav.preview")}</a></li>
         <li><a href="#cards">${t("nav.components")}</a></li>
+        <li><a href="#ai-chat">${t("nav.chat")}</a></li>
         <li><a href="https://github.com/jarvisluk/Web_Style_Visualization" target="_blank" rel="noopener">${t("nav.github")}</a></li>
         <li><a href="#" class="lang-toggle" style="font-weight: bold; color: var(--color-primary);">${t("nav.lang")}</a></li>
       </ul>

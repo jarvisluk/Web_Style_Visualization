@@ -4,6 +4,7 @@ const translations = {
   en: {
     "nav.preview": "Preview",
     "nav.components": "Components",
+    "nav.chat": "Chat",
     "nav.github": "GitHub",
     "nav.lang": "中/EN",
     "hero.start": "Get Started",
@@ -109,6 +110,7 @@ const translations = {
   zh: {
     "nav.preview": "预览",
     "nav.components": "组件",
+    "nav.chat": "聊天",
     "nav.github": "源码",
     "nav.lang": "EN/中",
     "hero.start": "开始使用",

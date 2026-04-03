@@ -13,6 +13,9 @@ import { renderStyleSelector } from "./panels/style-selector.js";
 import { renderTuningPanel } from "./panels/tuning-panel.js";
 import { renderCodePanel } from "./panels/code-panel.js";
 
+// Agent API
+import { initAgentAPI } from "./utils/agent-api.js";
+
 function init() {
   // Render all components
   renderNavbar(document.getElementById("navbar"));
@@ -44,6 +47,8 @@ function init() {
     tuningPanel.classList.toggle("open");
     document.body.classList.toggle("tuning-open");
   });
+
+  initAgentAPI();
 }
 
 // Boot

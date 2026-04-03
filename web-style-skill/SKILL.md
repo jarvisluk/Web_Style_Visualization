@@ -2,22 +2,130 @@
 name: web-style-api
 description: >-
   Control the Web Style Visualization website programmatically via
-  window.WebStyleAPI. Use when generating, previewing, or adjusting
-  web design styles through browser automation (Playwright, Puppeteer,
-  browser-use). Covers available CSS variables, preset styles, and
-  export workflows.
+  window.WebStyleAPI, URL parameters, or the built-in helper script.
+  Use when generating, previewing, or adjusting web design styles.
+  Supports browser automation, URL-based preview, and fully offline
+  CSS generation. Self-contained — no workspace files required.
 ---
 
 # Web Style API — Agent Skill
 
 **Site URL:** https://jarvisluk.github.io/Web_Style_Visualization/
 
-Use this skill when a task requires previewing, generating, or adjusting web
-design styles on the **Web Style Visualization** site. The agent must first
-navigate to the URL above, then use the global `window.WebStyleAPI` object
-via browser DevTools, Playwright `page.evaluate()`, or `postMessage`.
+> **CRITICAL — DO NOT modify any local project files.**
+> When the user asks you to create / adjust / preview a web style, use the
+> tiered approach below. Never edit local source code, CSS files, or JSON
+> style files to fulfil a style request.
 
-## Quick Start
+## Capability Tiers (choose the best available)
+
+Pick the **highest tier** your environment supports:
+
+| Tier | Method | Requires | Capabilities |
+|---|---|---|---|
+| 1 | Playwright / browser-use | Headless browser | Full API + screenshots + live preview |
+| 2 | URL parameters | User opens link | Apply preset or custom vars in browser |
+| 3 | Offline CSS generation | Python 3 | Run `build_url.py` to get CSS from built-in presets |
+
+### Tier 1 — Browser Automation (Playwright / browser-use)
+
+Use when a headless browser is available. Provides the richest experience:
+interactive preview, screenshots, and full `window.WebStyleAPI` access.
+
+### Tier 2 — URL Parameters (no automation needed)
+
+Construct a URL and tell the user to open it. No Playwright required.
+
+```
+# Preset
+https://jarvisluk.github.io/Web_Style_Visualization/?style=glassmorphism
+
+# Custom variables (URL-encoded JSON)
+https://jarvisluk.github.io/Web_Style_Visualization/?variables=%7B%22--color-primary%22%3A%22%236366f1%22%7D
+```
+
+#### Helper Script (`web-style-skill/scripts/build_url.py`)
+
+A one-stop Python script that covers the full Tier 2 / Tier 3 pipeline:
+load preset → merge overrides → generate CSS → build URL.
+No external dependencies — Python 3 standard library only.
+
+**Input JSON schema:**
+
+```json
+{
+  "style":     "<preset-id>",         // optional — load a built-in preset
+  "variables": { "--var": "val" },    // optional — CSS variable overrides
+  "base_url":  "https://..."          // optional — override site URL
+}
+```
+
+**Default output** is a JSON object containing everything the agent needs:
+
+```json
+{
+  "url":        "https://…?style=…&variables=…",
+  "css":        ":root { --color-primary: …; … }",
+  "variables":  { "--color-primary": "…", "…": "…" },
+  "style_info": { "id": "…", "name": "…", "category": "…", "description": "…" }
+}
+```
+
+- When only `style` is given → loads preset variables, URL uses `?style=<id>`.
+- When only `variables` is given → merges onto `flat` as the default base.
+- When both are given → loads the preset, overlays overrides, URL includes both params.
+
+**Usage:**
+
+```bash
+# Preset — returns full JSON (url + css + variables + style_info)
+python web-style-skill/scripts/build_url.py '{"style": "glassmorphism"}'
+
+# Custom overrides (auto-merges onto flat base)
+python web-style-skill/scripts/build_url.py '{"variables": {"--color-primary": "#6366f1"}}'
+
+# Preset + overrides
+python web-style-skill/scripts/build_url.py '{"style": "brutalism", "variables": {"--color-primary": "#ff0000"}}'
+
+# URL-only mode (just prints the URL string)
+python web-style-skill/scripts/build_url.py --url-only '{"style": "retro"}'
+
+# From stdin / file
+echo '{"style": "dark-mode"}' | python web-style-skill/scripts/build_url.py
+python web-style-skill/scripts/build_url.py -f config.json
+```
+
+**Programmatic import:**
+
+```python
+from build_url import build_url, process
+
+# URL only
+url = build_url({"style": "glassmorphism"})
+
+# Full pipeline (url + css + variables + style_info)
+result = process({
+    "style": "glassmorphism",
+    "variables": {"--color-primary": "#6366f1"}
+})
+print(result["css"])
+```
+
+### Tier 3 — Offline CSS Generation (no browser at all)
+
+The helper script has all preset data built in. Simply run it and read the
+`css` field from the output — no workspace files needed:
+
+```bash
+python web-style-skill/scripts/build_url.py '{"style": "glassmorphism"}'
+# → output JSON includes "css": ":root { --color-primary: #a855f7; … }"
+```
+
+The script automatically loads the built-in preset, merges any user overrides,
+and formats the result as `:root { … }` CSS. When only `variables` is
+provided (no `style`), it uses `flat` as the default base.
+
+## Quick Start (Tier 1)
 
 ```js
 // 1. List available preset styles
@@ -114,7 +222,7 @@ Every method returns `{ success: boolean, data?: any, error?: string }`.
 | `--glow-intensity` | Glow / neon intensity |
 | `--glow-color` | Glow / neon color |
 
-## Playwright / browser-use Examples
+## Tier 1 Examples (Playwright / browser-use)
 
 ### Navigate to the site and apply a preset
 
@@ -152,20 +260,6 @@ const defs = await page.evaluate(() =>
 // defs.data → [{ name: "--color-primary", description: "..." }, ...]
 ```
 
-## URL Parameter Usage
-
-Open the site with query parameters to apply styles on load:
-
-```
-# Apply a preset
-https://jarvisluk.github.io/Web_Style_Visualization/?style=glassmorphism
-
-# Apply custom variables (URL-encoded JSON)
-https://jarvisluk.github.io/Web_Style_Visualization/?variables=%7B%22--color-primary%22%3A%22%236366f1%22%7D
-```
-
-Only one of `?style=` or `?variables=` is used; `?style=` takes priority.
-
 ## PostMessage Usage (iframe embedding)
 
 Send a message to the site's window to invoke any API method:
@@ -191,9 +285,22 @@ Supported `action` values match the API method names: `listStyles`,
 
 ## Typical Agent Workflow
 
-1. Navigate to **https://jarvisluk.github.io/Web_Style_Visualization/**
+> Remember: **DO NOT** create or edit any local project files. Everything
+> happens via the API, URL parameters, or the built-in helper script.
+
+**If browser automation is available (Tier 1):**
+
+1. Open **https://jarvisluk.github.io/Web_Style_Visualization/** in the browser.
 2. Call `listStyles()` to see available presets.
-3. Call `applyStyle(id)` to start from a preset, or `applyVariables({...})` for a fully custom look.
+3. Call `applyStyle(id)` or `applyVariables({...})` for a custom look.
 4. Take a screenshot to verify the visual result.
-5. Call `exportCSS()` to get the final CSS output.
-6. Optionally call `resetStyle()` and iterate.
+5. Tell the user to visit the URL, or call `exportCSS()` to return CSS.
+
+**If no browser automation (Tier 2 / Tier 3):**
+
+1. Run the helper script with the user's requirements as JSON:
+   ```bash
+   python web-style-skill/scripts/build_url.py '{"style": "glassmorphism", "variables": {"--color-primary": "#6366f1"}}'
+   ```
+2. Parse the JSON output — it contains `url`, `css`, `variables`, and `style_info`.
+3. Return the `css` block and the preview `url` to the user.

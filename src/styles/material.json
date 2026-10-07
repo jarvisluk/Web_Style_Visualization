@@ -31,20 +31,11 @@
     "--bg-opacity": "1"
   },
   "specialTuning": [
-    {
-      "variable": "--shadow-blur",
-      "label": "Elevation",
-      "labelZh": "层级",
-      "type": "range",
-      "min": 0,
-      "max": 24,
-      "step": 2,
-      "unit": "px"
-    }
+    { "variable": "--shadow-blur", "label": "Elevation", "labelZh": "层级", "type": "range", "min": 0, "max": 24, "step": 2, "unit": "px" }
   ],
   "keyProperties": [
-    { "property": "box-shadow (elevation)", "explanation": "阴影深度对应 Material 层级系统" },
-    { "property": "border-radius: 12px", "explanation": "Material 3 偏好更圆润的圆角" },
-    { "property": "font-family: Roboto", "explanation": "Google 官方字体" }
+    { "property": "box-shadow (elevation)", "explanation": "Shadow depth maps to Material's elevation levels", "explanationZh": "阴影深度对应 Material 层级系统" },
+    { "property": "border-radius: 12px", "explanation": "Material 3 favors rounder corners", "explanationZh": "Material 3 偏好更圆润的圆角" },
+    { "property": "font-family: Roboto", "explanation": "Google's house typeface", "explanationZh": "Google 官方字体" }
   ]
 }

@@ -46,7 +46,8 @@
         "required": ["property", "explanation"],
         "properties": {
           "property": { "type": "string" },
-          "explanation": { "type": "string" }
+          "explanation": { "type": "string" },
+          "explanationZh": { "type": "string" }
         }
       }
     }

@@ -31,20 +31,11 @@
     "--bg-opacity": "1"
   },
   "specialTuning": [
-    {
-      "variable": "--border-radius",
-      "label": "Roundness",
-      "labelZh": "圆润度",
-      "type": "range",
-      "min": 8,
-      "max": 40,
-      "step": 2,
-      "unit": "px"
-    }
+    { "variable": "--border-radius", "label": "Roundness", "labelZh": "圆润度", "type": "range", "min": 8, "max": 40, "step": 2, "unit": "px" }
   ],
   "keyProperties": [
-    { "property": "border-radius: 24px", "explanation": "大圆角模拟黏土的圆润体块" },
-    { "property": "box-shadow (inner+outer)", "explanation": "内外双阴影创造 3D 立体质感" },
-    { "property": "warm palette", "explanation": "温暖色调增强黏土/手工感" }
+    { "property": "border-radius: 32px", "explanation": "Large radii mimic soft, rounded clay", "explanationZh": "大圆角模拟黏土的圆润体块" },
+    { "property": "box-shadow (inner + outer)", "explanation": "Inner and outer shadows create a puffy 3D volume", "explanationZh": "内外双阴影创造 3D 立体质感" },
+    { "property": "warm palette", "explanation": "Warm, friendly colors add a handmade feel", "explanationZh": "温暖色调增强黏土/手工感" }
   ]
 }

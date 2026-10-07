@@ -31,29 +31,11 @@
     "--bg-opacity": "0.1"
   },
   "specialTuning": [
-    {
-      "variable": "--backdrop-blur",
-      "label": "Blur Intensity",
-      "labelZh": "模糊强度",
-      "type": "range",
-      "min": 0,
-      "max": 30,
-      "step": 1,
-      "unit": "px"
-    },
-    {
-      "variable": "--bg-opacity",
-      "label": "Background Opacity",
-      "labelZh": "背景透明度",
-      "type": "range",
-      "min": 0,
-      "max": 1,
-      "step": 0.05,
-      "unit": ""
-    }
+    { "variable": "--backdrop-blur", "label": "Blur Intensity", "labelZh": "模糊强度", "type": "range", "min": 0, "max": 30, "step": 1, "unit": "px" },
+    { "variable": "--bg-opacity", "label": "Background Opacity", "labelZh": "背景透明度", "type": "range", "min": 0, "max": 1, "step": 0.05, "unit": "" }
   ],
   "keyProperties": [
-    { "property": "backdrop-filter: blur()", "explanation": "核心：模糊元素背后的内容" },
-    { "property": "background: rgba()", "explanation": "半透明背景让模糊效果透出" }
+    { "property": "backdrop-filter: blur()", "explanation": "The core: blur whatever sits behind the element", "explanationZh": "核心：模糊元素背后的内容" },
+    { "property": "background: rgba()", "explanation": "Translucent fills let the blur show through", "explanationZh": "半透明背景让模糊效果透出" }
   ]
 }

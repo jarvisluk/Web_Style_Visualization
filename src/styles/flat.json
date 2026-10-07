@@ -32,8 +32,8 @@
   },
   "specialTuning": [],
   "keyProperties": [
-    { "property": "box-shadow: none", "explanation": "扁平设计的核心：完全没有阴影" },
-    { "property": "border-radius: 0", "explanation": "直角边缘强化几何感" },
-    { "property": "background: solid color", "explanation": "大面积纯色块，无渐变" }
+    { "property": "box-shadow: none", "explanation": "The core of flat design: no shadows at all", "explanationZh": "扁平设计的核心：完全没有阴影" },
+    { "property": "border-radius: 8px", "explanation": "Modest corners keep shapes crisp and geometric", "explanationZh": "适度圆角保持干净的几何感" },
+    { "property": "background: solid color", "explanation": "Large blocks of solid color, no gradients", "explanationZh": "大面积纯色块，无渐变" }
   ]
 }

@@ -32,6 +32,6 @@
   },
   "specialTuning": [],
   "keyProperties": [
-    { "property": "example-property", "explanation": "解释这个属性为什么重要" }
+    { "property": "example-property", "explanation": "Explain why this property matters", "explanationZh": "解释这个属性为什么重要" }
   ]
 }

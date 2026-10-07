@@ -31,19 +31,10 @@
     "--bg-opacity": "1"
   },
   "specialTuning": [
-    {
-      "variable": "--shadow-blur",
-      "label": "Shadow Blur",
-      "labelZh": "阴影模糊",
-      "type": "range",
-      "min": 4,
-      "max": 40,
-      "step": 1,
-      "unit": "px"
-    }
+    { "variable": "--shadow-blur", "label": "Shadow Blur", "labelZh": "阴影模糊", "type": "range", "min": 4, "max": 40, "step": 1, "unit": "px" }
   ],
   "keyProperties": [
-    { "property": "box-shadow (dual)", "explanation": "亮面 + 暗面双阴影是新拟态的核心" },
-    { "property": "background = page bg", "explanation": "元素与背景同色才有凸起效果" }
+    { "property": "box-shadow (dual)", "explanation": "A light and a dark shadow together are the heart of neumorphism", "explanationZh": "亮面 + 暗面双阴影是新拟态的核心" },
+    { "property": "background = page bg", "explanation": "Elements share the page color so they appear extruded", "explanationZh": "元素与背景同色才有凸起效果" }
   ]
 }

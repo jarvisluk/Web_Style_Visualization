@@ -14,6 +14,7 @@ export const LATIN_FONTS = [
   { label: "Inter", value: `'Inter', ${CJK_SANS}` },
   { label: "Geist", value: `'Geist', ${CJK_SANS}` },
   { label: "Roboto", value: `'Roboto', 'Noto Sans SC', ${CJK_SANS}` },
+  { label: "Newsreader", value: `'Newsreader', ${CJK_SERIF}` },
   { label: "Instrument Serif", value: `'Instrument Serif', ${CJK_SERIF}` },
   { label: "Courier Prime", value: `'Courier Prime', 'Noto Sans SC', ${CJK_SANS}` },
   { label: "Press Start 2P", value: `'Press Start 2P', 'Fusion Pixel SC', 'ZCOOL QingKe HuangYou', ${CJK_SANS}` },

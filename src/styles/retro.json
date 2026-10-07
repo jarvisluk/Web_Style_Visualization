@@ -39,26 +39,12 @@
     "--glow-color": "#ff0080"
   },
   "specialTuning": [
-    {
-      "variable": "--glow-color",
-      "label": "Neon Color",
-      "labelZh": "霓虹颜色",
-      "type": "color"
-    },
-    {
-      "variable": "--shadow-blur",
-      "label": "Glow Intensity",
-      "labelZh": "发光强度",
-      "type": "range",
-      "min": 0,
-      "max": 30,
-      "step": 1,
-      "unit": "px"
-    }
+    { "variable": "--glow-color", "label": "Neon Color", "labelZh": "霓虹颜色", "type": "color" },
+    { "variable": "--shadow-blur", "label": "Glow Intensity", "labelZh": "发光强度", "type": "range", "min": 0, "max": 30, "step": 1, "unit": "px" }
   ],
   "keyProperties": [
-    { "property": "font-family: pixel", "explanation": "中西文都用点阵像素字体，这是复古风的核心标识" },
-    { "property": "text-shadow: neon glow", "explanation": "霓虹发光效果营造 CRT 屏幕感" },
-    { "property": "color: #00ff88", "explanation": "绿色终端色致敬早期计算机" }
+    { "property": "font-family: pixel", "explanation": "Pixel fonts for both Latin and Chinese are the retro signature", "explanationZh": "中西文都用点阵像素字体，这是复古风的核心标识" },
+    { "property": "text-shadow: neon glow", "explanation": "Neon glow evokes a CRT screen", "explanationZh": "霓虹发光效果营造 CRT 屏幕感" },
+    { "property": "color: #00f0ff", "explanation": "Cyan text on near-black nods to early terminals", "explanationZh": "深色底上的青色文字致敬早期终端" }
   ]
 }

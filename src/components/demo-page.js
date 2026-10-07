@@ -1,7 +1,7 @@
 // The sample product page rendered inside the themed canvas.
 // Everything here reads the style CSS variables; nothing reads --ui-* tokens.
 import { getCurrentStyle, getCurrentStyleId, onChange } from "../utils/css-var-manager.js";
-import { t, getStyleName, getStyleDesc, getCategoryName, onLangChange } from "../utils/i18n.js";
+import { t, getLang, getStyleName, getStyleDesc, getCategoryName, onLangChange } from "../utils/i18n.js";
 import { icon } from "../utils/icons.js";
 
 const escapeHTML = (s) =>
@@ -78,7 +78,7 @@ function keyPropsHTML(style) {
         items.length
           ? `<ul class="d-key-list">${items
               .map(
-                (k) => `<li><code>${escapeHTML(k.property)}</code><span>${escapeHTML(k.explanation)}</span></li>`
+                (k) => `<li><code>${escapeHTML(k.property)}</code><span>${escapeHTML(getLang() === "zh" && k.explanationZh ? k.explanationZh : k.explanation)}</span></li>`
               )
               .join("")}</ul>`
           : `<p class="muted">${t("demo.key.empty")}</p>`

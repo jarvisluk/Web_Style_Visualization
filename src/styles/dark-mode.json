@@ -32,8 +32,8 @@
   },
   "specialTuning": [],
   "keyProperties": [
-    { "property": "background: #121212", "explanation": "纯黑偏灰的基底，减少视觉疲劳" },
-    { "property": "color: #e0e0e0", "explanation": "柔和白而非纯白，降低对比刺激" },
-    { "property": "border: rgba(255,255,255,0.08)", "explanation": "极低不透明度边框提供微弱分隔" }
+    { "property": "background: #09090b", "explanation": "Near-black, not pure black, reduces eye strain", "explanationZh": "接近纯黑但不是纯黑的基底，减少视觉疲劳" },
+    { "property": "color: #fafafa", "explanation": "Soft white instead of pure white lowers harsh contrast", "explanationZh": "柔和白而非纯白，降低对比刺激" },
+    { "property": "border: low-contrast", "explanation": "Subtle borders separate surfaces without glare", "explanationZh": "低对比边框提供微弱分隔" }
   ]
 }

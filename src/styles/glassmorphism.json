@@ -24,7 +24,7 @@
     "--shadow-blur": "32px",
     "--shadow-spread": "0px",
     "--shadow-color": "rgba(31, 38, 135, 0.15)",
-    "--font-family": "'Inter', 'Noto Sans SC', sans-serif",
+    "--font-family": "'Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif",
     "--font-weight": "400",
     "--font-weight-bold": "600",
     "--backdrop-blur": "12px",

@@ -1,8 +1,7 @@
-const styleModules = import.meta.glob("./*.json", { eager: true });
+const styleModules = import.meta.glob(["./*.json", "!./_*.json"], { eager: true });
 
 export const STYLES = Object.fromEntries(
   Object.entries(styleModules)
-    .filter(([path]) => !path.includes("_"))
     .map(([, mod]) => [mod.default.id, mod.default])
 );
 

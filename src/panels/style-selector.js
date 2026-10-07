@@ -1,132 +1,171 @@
 import { STYLE_LIST } from "../styles/index.js";
-import { applyStyle, applyCustomVariables, getCurrentStyleId } from "../utils/css-var-manager.js";
-import { t, getStyleName, getCategoryName, onLangChange } from "../utils/i18n.js";
+import { applyStyle, applyCustomVariables, getCurrentStyleId, onChange } from "../utils/css-var-manager.js";
+import { t, getStyleName, getStyleDesc, getCategoryName, onLangChange } from "../utils/i18n.js";
+import { icon } from "../utils/icons.js";
 
-export function renderStyleSelector(container) {
-  let hasInitialScrolled = false;
+const CATEGORY_ORDER = ["modern", "classic", "theme"];
 
-  const render = () => {
-    container.innerHTML = "";
-    
-    const title = document.createElement("div");
-    title.className = "style-selector-title";
-    title.textContent = t("selector.title");
-
-    const grid = document.createElement("div");
-    grid.className = "style-selector-grid";
-
-    // Built-in style cards
-    STYLE_LIST.forEach((style) => {
-      const card = document.createElement("div");
-      card.className = "style-card";
-      card.dataset.styleId = style.id;
-
-      card.innerHTML = `
-        <div class="style-card-name">${getStyleName(style)}</div>
-        <div class="style-card-category">${getCategoryName(style.category)}</div>
-      `;
-
-      card.addEventListener("click", () => {
-        applyStyle(style.id);
-        updateActiveState(grid, style.id);
-      });
-
-      grid.appendChild(card);
-    });
-
-    // Custom CSS card (last in list)
-    const customCard = document.createElement("div");
-    customCard.className = "style-card style-card-custom";
-    customCard.dataset.styleId = "custom";
-    customCard.innerHTML = `
-      <div class="style-card-name">${t("custom.name")}</div>
-      <div class="style-card-category">${getCategoryName("custom")}</div>
-    `;
-    customCard.addEventListener("click", () => {
-      openCustomCSSModal(grid);
-    });
-    grid.appendChild(customCard);
-
-    // Custom CSS modal
-    const modal = createCustomCSSModal(grid);
-
-    container.appendChild(title);
-    container.appendChild(grid);
-    container.appendChild(modal);
-
-    const activeId = getCurrentStyleId();
-    if (activeId) {
-      updateActiveState(grid, activeId);
-    } else if (STYLE_LIST.length > 0) {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const defaultId = prefersDark ? "dark-mode" : "material";
-      const defaultStyle = STYLE_LIST.find((s) => s.id === defaultId) || STYLE_LIST[0];
-      applyStyle(defaultStyle.id);
-      updateActiveState(grid, defaultStyle.id);
-    }
-
-    // Scroll initialization
-    if (!hasInitialScrolled) {
-      requestAnimationFrame(() => {
-        const prefersDarkScroll = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const idToScroll = getCurrentStyleId() || (prefersDarkScroll ? "dark-mode" : "material");
-        const activeCard = grid.querySelector(`.style-card[data-style-id="${idToScroll}"]`);
-        if (activeCard) {
-          const scrollLeft = activeCard.offsetLeft - (grid.clientWidth / 2) + (activeCard.offsetWidth / 2);
-          grid.scrollTo({ left: scrollLeft, behavior: "instant" });
-        }
-        hasInitialScrolled = true;
-      });
-    }
-  };
-
-  render();
-  onLangChange(render);
+// A miniature of the style, painted with its own variables.
+function swatchHTML(style) {
+  const v = style.variables;
+  const radius = Math.min(parseFloat(v["--border-radius"]) || 0, 10);
+  const border = parseFloat(v["--border-width"]) ? v["--border-color"] || v["--color-border"] : "transparent";
+  return `
+    <span class="swatch" style="background:${v["--color-bg"]}">
+      <span class="swatch-card" style="background:${v["--color-surface"]};border-radius:${radius}px;border-color:${border}">
+        <span class="swatch-line" style="background:${v["--color-text"]}"></span>
+        <span class="swatch-pill" style="background:${v["--color-primary"]};border-radius:${radius}px"></span>
+      </span>
+      <span class="swatch-dot" style="background:${v["--color-accent"]}"></span>
+    </span>`;
 }
 
-function createCustomCSSModal(grid) {
-  const modal = document.createElement("div");
-  modal.className = "custom-css-modal";
-  modal.id = "custom-css-modal";
-  modal.innerHTML = `
-    <div class="custom-css-modal-backdrop"></div>
-    <div class="custom-css-modal-content">
-      <div class="custom-css-modal-header">
-        <span class="custom-css-modal-title">${t("custom.title")}</span>
-        <button class="custom-css-modal-close">×</button>
+export function renderStyleSelector(container) {
+  const modal = createCustomCSSModal();
+  document.body.appendChild(modal);
+
+  const render = () => {
+    const groups = CATEGORY_ORDER.map((cat) => ({
+      cat,
+      styles: STYLE_LIST.filter((s) => s.category === cat),
+    })).filter((g) => g.styles.length);
+
+    container.innerHTML = `
+      <div class="rail-head">
+        <span class="rail-title">${t("rail.title")}</span>
+        <span class="rail-count">${STYLE_LIST.length} ${t("rail.count")}</span>
       </div>
-      <div class="custom-css-modal-body">
-        <p class="custom-css-modal-hint">${t("custom.hint")}</p>
-        <textarea class="custom-css-textarea" placeholder=":root {\n  --color-primary: #6366f1;\n  --color-bg: #0f0f23;\n  --color-text: #e2e8f0;\n  --border-radius: 16px;\n  ...\n}" rows="10"></textarea>
-        <div class="custom-css-file-row">
-          <label class="btn btn-ghost btn-sm custom-css-file-label">
-            ${t("custom.upload")}
-            <input type="file" accept=".css,.txt" class="custom-css-file-input" />
-          </label>
-          <span class="custom-css-file-name"></span>
+      <div class="rail-list" role="listbox" aria-label="${t("rail.title")}">
+        ${groups
+          .map(
+            (g) => `
+          <div class="rail-group" role="group" aria-label="${getCategoryName(g.cat)}">
+            <div class="rail-group-label">${getCategoryName(g.cat)}</div>
+            ${g.styles
+              .map(
+                (s) => `
+              <button class="style-item" role="option" data-style-id="${s.id}" title="${getStyleDesc(s)}">
+                ${swatchHTML(s)}
+                <span class="style-item-text">
+                  <span class="style-item-name">${getStyleName(s)}</span>
+                  <span class="style-item-desc">${getStyleDesc(s)}</span>
+                </span>
+              </button>`
+              )
+              .join("")}
+          </div>`
+          )
+          .join("")}
+        <div class="rail-group">
+          <button class="style-item style-item-custom" data-style-id="custom">
+            <span class="swatch swatch-custom">${icon("plus", 18)}</span>
+            <span class="style-item-text">
+              <span class="style-item-name">${t("custom.name")}</span>
+              <span class="style-item-desc">${t("custom.desc")}</span>
+            </span>
+          </button>
         </div>
+      </div>`;
+
+    container.querySelectorAll(".style-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.styleId;
+        if (id === "custom") openModal(modal);
+        else applyStyle(id);
+      });
+    });
+
+    syncActive();
+  };
+
+  const syncActive = () => {
+    const activeId = getCurrentStyleId();
+    container.querySelectorAll(".style-item").forEach((item) => {
+      const active = item.dataset.styleId === activeId;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+      if (active && !item.dataset.seen) {
+        item.dataset.seen = "1";
+        item.scrollIntoView({ block: "nearest", inline: "center" });
+      }
+    });
+  };
+
+  // In the narrow layout the list scrolls horizontally: let a vertical mouse
+  // wheel drive it, and mark the edges so the fade only shows where more items are.
+  const updateEdges = () => {
+    const list = container.querySelector(".rail-list");
+    if (!list) return;
+    const max = list.scrollWidth - list.clientWidth;
+    list.classList.toggle("can-scroll-left", max > 1 && list.scrollLeft > 1);
+    list.classList.toggle("can-scroll-right", max > 1 && list.scrollLeft < max - 1);
+  };
+
+  container.addEventListener(
+    "wheel",
+    (e) => {
+      const list = e.target.closest(".rail-list");
+      if (!list || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const max = list.scrollWidth - list.clientWidth;
+      if (max <= 1) return; // vertical layout: normal scrolling
+      const atStart = list.scrollLeft <= 0 && e.deltaY < 0;
+      const atEnd = list.scrollLeft >= max - 1 && e.deltaY > 0;
+      if (atStart || atEnd) return; // let the page scroll past the ends
+      e.preventDefault();
+      list.scrollLeft += e.deltaY;
+    },
+    { passive: false }
+  );
+  container.addEventListener("scroll", updateEdges, true);
+  window.addEventListener("resize", updateEdges);
+
+  render();
+  updateEdges();
+  onChange(syncActive);
+  onLangChange(() => {
+    render();
+    updateEdges();
+    rebuildModal(modal);
+  });
+}
+
+function createCustomCSSModal() {
+  const modal = document.createElement("dialog");
+  modal.className = "ui-modal";
+  rebuildModal(modal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.close();
+  });
+  return modal;
+}
+
+function rebuildModal(modal) {
+  modal.innerHTML = `
+    <form method="dialog" class="ui-modal-card">
+      <div class="ui-modal-head">
+        <span class="ui-modal-title">${t("custom.title")}</span>
+        <button class="ui-icon-btn" value="cancel" aria-label="${t("custom.cancel")}">${icon("x", 16)}</button>
       </div>
-      <div class="custom-css-modal-footer">
-        <button class="btn btn-ghost btn-sm custom-css-cancel">${t("custom.cancel")}</button>
-        <button class="btn btn-primary btn-sm custom-css-apply">${t("custom.apply")}</button>
+      <p class="ui-hint">${t("custom.hint")}</p>
+      <textarea class="ui-textarea" rows="10" spellcheck="false" placeholder=":root {\n  --color-primary: #6366f1;\n  --color-bg: #0f0f23;\n  --border-radius: 16px;\n}"></textarea>
+      <p class="ui-error" hidden></p>
+      <div class="ui-modal-foot">
+        <label class="ui-btn ui-btn-ghost">
+          ${icon("download", 14)} ${t("custom.upload")}
+          <input type="file" accept=".css,.txt" hidden />
+        </label>
+        <span class="ui-spacer"></span>
+        <button class="ui-btn ui-btn-ghost" value="cancel">${t("custom.cancel")}</button>
+        <button class="ui-btn ui-btn-primary" value="apply" type="button" data-apply>${t("custom.apply")}</button>
       </div>
-    </div>
-  `;
+    </form>`;
 
-  // Close handlers
-  modal.querySelector(".custom-css-modal-backdrop").addEventListener("click", () => closeModal(modal));
-  modal.querySelector(".custom-css-modal-close").addEventListener("click", () => closeModal(modal));
-  modal.querySelector(".custom-css-cancel").addEventListener("click", () => closeModal(modal));
+  const textarea = modal.querySelector("textarea");
+  const error = modal.querySelector(".ui-error");
 
-  // File upload handler
-  const fileInput = modal.querySelector(".custom-css-file-input");
-  const fileNameEl = modal.querySelector(".custom-css-file-name");
-  const textarea = modal.querySelector(".custom-css-textarea");
-
-  fileInput.addEventListener("change", (e) => {
+  modal.querySelector("input[type=file]").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    fileNameEl.textContent = file.name;
     const reader = new FileReader();
     reader.onload = (ev) => {
       textarea.value = ev.target.result;
@@ -134,36 +173,20 @@ function createCustomCSSModal(grid) {
     reader.readAsText(file);
   });
 
-  // Apply handler
-  modal.querySelector(".custom-css-apply").addEventListener("click", () => {
+  modal.querySelector("[data-apply]").addEventListener("click", () => {
     const cssText = textarea.value.trim();
     if (!cssText) return;
-
-    const success = applyCustomVariables(cssText);
-    if (success) {
-      updateActiveState(grid, "custom");
-      closeModal(modal);
+    if (applyCustomVariables(cssText)) {
+      error.hidden = true;
+      modal.close();
     } else {
-      alert("No CSS variables found. Please provide --variable: value; format.");
+      error.textContent = t("custom.invalid");
+      error.hidden = false;
     }
   });
-
-  return modal;
 }
 
-function openCustomCSSModal(grid) {
-  const modal = document.getElementById("custom-css-modal");
-  if (modal) {
-    modal.classList.add("open");
-  }
-}
-
-function closeModal(modal) {
-  modal.classList.remove("open");
-}
-
-function updateActiveState(grid, activeId) {
-  grid.querySelectorAll(".style-card").forEach((card) => {
-    card.classList.toggle("active", card.dataset.styleId === activeId);
-  });
+function openModal(modal) {
+  modal.showModal();
+  modal.querySelector("textarea")?.focus();
 }

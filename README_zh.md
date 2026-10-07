@@ -2,118 +2,94 @@
 
 [English](./README.md)
 
-> 一个面向设计师和前端开发者的交互式风格实验场：选择一种设计风格，整站 UI 实时切换，支持细粒度参数微调与 CSS 导出。
+> 一个面向设计师和前端开发者的设计风格工作台：选择一种风格，示例页面实时切换，细粒度微调参数，并导出 CSS。人和 AI Agent 都能直接操作。
 
 **在线体验：** https://jarvisluk.github.io/Web_Style_Visualization/
 
-## 配合 AI 编程助手使用（Cursor / Codex Skill）
-
-本项目包含一个 **Agent Skill**，可以让 AI 编程助手（如 Cursor、Codex）代你生成和预览网页风格。安装 Skill 后，你可以对 AI 助手说：
-
-- *"给我看看毛玻璃风格是什么样的"*
-- *"创建一个深色未来感主题，用青色做点缀"*
-- *"生成一套温暖极简风格的 CSS"*
-
-AI 会通过以下方式之一响应你：
-1. **在浏览器中打开网站**，应用风格后截图给你预览
-2. **给你一个链接**，打开即可看到预设好的风格
-3. **直接在对话中生成 CSS**，供你复制使用
-
-### 安装 Skill
-
-Skill 文件位于本仓库的 `web-style-skill/SKILL.md`。使用方法：
-
-- **Cursor** — 将 `web-style-skill/` 文件夹复制到你的项目或 Cursor 可发现 Skill 的目录中
-- **Codex** — 放置在 `~/.codex/skills/` 目录下，Codex 会自动识别
-
-安装完成后，直接向 AI 助手询问关于网页风格的问题 — 它会自动调用 Skill 来完成。
-
----
-
 ## 这是什么？
 
-Web Style Visualisation 让你能够**直观地看到和感受**不同的网页设计风格，而不只是停留在概念层面。选择一种风格后，整个页面会立刻发生变化：按钮、卡片、导航栏、表单、统计数据……所有组件同步更新，让你从整体视角评判风格效果。
+Web Style Visualisation 让你**直观地看到和感受**不同的网页设计风格，而不只是停留在概念上。工作台分成三栏：
 
-你还可以用滑块和取色器微调任意参数（颜色、圆角、阴影、字体、间距……），然后一键复制 CSS，直接用在自己的项目中。
+- **左栏：风格列表**，每个风格都带一张用它自己的配色绘制的缩略图。
+- **中间：画布**，一个完整的示例产品页（导航、Hero、数据面板、功能卡片、表单、组件），整页跟随所选风格变化。可以在桌面、平板、手机三种宽度之间切换。
+- **右栏：检查器**，分为「调参」「代码」「Agent」三个标签页。
 
-## 如何使用网站
+工作台本身的界面使用独立的中性配色（支持浅色和深色），不会被正在预览的风格影响。
+
+## 如何使用
 
 ### 1. 选择风格
 
-页面顶部有一排**风格卡片**，点击任意一张即可将该风格应用到整站。
-
-可选风格：
+点击左栏任意风格即可应用。
 
 | 风格 | 视觉效果 |
 |---|---|
-| **Flat Design（扁平设计）** | 干净极简 — 无阴影、无渐变、纯色块 |
-| **Material Design（质感设计）** | 纸片层级感，带有轻微阴影和深度 |
-| **Glassmorphism（毛玻璃）** | 半透明磨砂玻璃面板，背景模糊效果 |
-| **Neumorphism（新拟态）** | 柔和的同色系凸起和凹陷，像黏土或塑料 |
-| **Claymorphism（黏土风）** | 圆润的 3D 体块，活泼有趣的触感 |
-| **Brutalism（野兽派）** | 粗边框、硬阴影、生猛排版 — 大胆张扬 |
-| **Dark Mode（暗色模式）** | 深色背景、低炫光，适合夜间舒适阅读 |
-| **Retro / Pixel（复古像素）** | 像素字体、霓虹色彩、老式街机感 |
+| **Liquid Glass（液态玻璃）** | 明亮通透的玻璃层悬浮在鲜艳色彩之上，胶囊形圆角 |
+| **Editorial（杂志编辑）** | 暖色纸张、墨色排版、细线分隔，超大衬线标题 |
+| **Glassmorphism（毛玻璃）** | 半透明磨砂玻璃面板，背景模糊 |
+| **Neumorphism（新拟态）** | 柔和的同色系凸起和凹陷 |
+| **Claymorphism（黏土风）** | 圆润的 3D 体块，活泼的触感 |
+| **Brutalism（野兽派）** | 粗边框、硬阴影、生猛排版 |
+| **Flat Design（扁平设计）** | 干净极简，无阴影、无渐变 |
+| **Material Design（质感设计）** | Material 3 色调与层级 |
+| **Dark Mode（深色模式）** | 深色背景、低眩光 |
+| **Retro / Pixel（复古像素）** | 像素字体、霓虹光晕、街机感 |
+
+也可以选「自定义」，粘贴或上传一份 CSS 变量。
 
 ### 2. 微调参数
 
-选好风格后，打开**微调面板**调整细节：
-
-- **颜色** — 用取色器更改主色、背景色、文字颜色和强调色
-- **圆角** — 拖动滑块，从直角到全圆角自由切换
-- **阴影** — 控制阴影方向、模糊度和强度
-- **字体** — 切换字体族和字重
-- **间距** — 增大或缩小元素之间的呼吸空间
-- **边框** — 改变边框粗细
-
-部分风格还有专属控件。例如毛玻璃风格可以调整模糊强度和透明度，野兽派可以改变硬阴影偏移量。
-
-每一项改动都会**即时**反映到页面上的所有组件。
+「调参」标签页可以调整颜色、圆角、边框、阴影、字体和间距。当前风格的专属参数（例如液态玻璃的折射模糊、复古像素的霓虹光晕）排在最前面。所有改动都会即时反映到画布上。
 
 ### 3. 导出 CSS
 
-调整满意后，打开**代码面板**。它会显示当前外观对应的全部 CSS 变量。你可以：
-
-- **一键复制** CSS 到剪贴板
-- 粘贴到你自己项目的样式表中，即可复现完全相同的风格
+「代码」标签页显示当前外观对应的全部 CSS 变量，可以一键复制或下载为 `variables.css`。
 
 ### 4. 通过链接分享
 
-当前风格配置会编码在页面 URL 中。直接复制浏览器地址栏的链接分享给别人 — 对方打开后会看到完全一样的风格效果。
+地址栏会随你的改动实时更新（`?style=…&variables=…`），复制链接或点击顶栏的「复制链接」即可分享，对方打开后看到的效果完全一致。
 
-### 5. AI 对话（实验性功能）
+## 配合 AI Agent 使用
 
-网站内置了一个 **AI 助手**（页面底部或浮动按钮）。你可以用自然语言描述想要的风格，例如：
+网站和 Agent 之间有四种接入方式，Agent 会按环境自动选用最合适的一种。
 
-- *"给我一个赛博朋克风格，霓虹紫和青色光芒，深色背景"*
-- *"极简北欧设计，柔和粉彩，大量留白"*
-- *"温馨咖啡馆氛围，大地棕色调，圆润边角"*
+### WebMCP（浏览器内 Agent）
 
-AI 会生成对应的风格参数并自动应用到页面。你也可以点击**骰子按钮**，随机获取一个创意提示词来寻找灵感。
+网站会通过 [WebMCP](https://webmachinelearning.github.io/webmcp/) 向浏览器注册 8 个工具：`list_styles`、`get_current_style`、`get_variable_definitions`、`apply_style`、`set_variables`、`reset_style`、`export_css`、`get_share_url`。在支持 `document.modelContext` 的浏览器里，浏览器内的 Agent 可以直接调用这些工具，不需要写脚本。检查器的「Agent」标签页会显示当前浏览器是否支持。
 
-> 注意：AI 对话功能需要配置 API 密钥（支持 OpenAI、Google Gemini 等）。点击对话面板中的设置齿轮图标进行配置。
+### `window.WebStyleAPI`（浏览器自动化）
 
-## 风格一览
+Playwright、browser-use 这类工具可以直接调用页面上的 JS API，例如：
 
-### 经典风格
-- **Flat Design（扁平设计）** — 从 iOS 7 和 Windows Metro 时代流行至今的极简风格
-- **Material Design（质感设计）** — Google 的设计语言，强调层级和深度
+```js
+WebStyleAPI.applyStyle("liquid-glass");
+WebStyleAPI.applyVariables({ "--color-primary": "#ff375f" }); // 在当前风格基础上合并
+WebStyleAPI.exportCSS();
+```
 
-### 现代风格
-- **Glassmorphism（毛玻璃）** — Apple 和现代仪表盘中流行的磨砂玻璃效果
-- **Neumorphism（新拟态）** — 柔和的凸起和凹陷造型
-- **Claymorphism（黏土风）** — 泡泡般的 3D 卡通质感
-- **Brutalism（野兽派）** — 生猛、未经打磨、刻意"粗糙"的设计
+### URL 参数
 
-### 主题
-- **Dark Mode（暗色模式）** — 为低光环境优化
-- **Retro / Pixel（复古像素）** — 怀旧街机和 8-bit 美学
+```
+?style=editorial
+?style=editorial&variables={"--color-accent":"#2563eb"}
+```
+
+只传 `variables` 时，会以 `flat` 为基础合并。
+
+### Agent Skill（编程助手）
+
+`web-style-skill/` 是一个 Agent Skill，安装后 Claude Code、Codex、Cursor 等编程助手可以生成风格、给出预览链接，或者完全离线地输出 CSS：
+
+- **Claude Code**：复制到 `~/.claude/skills/`
+- **Codex**：复制到 `~/.codex/skills/`
+- **Cursor**：复制到项目中或 Cursor 能发现 Skill 的目录
 
 ## 参与贡献
 
-- **添加新风格** — 参照 `src/styles/_template.json` 模板提交一个风格 JSON 文件
-- **改进网站** — 提交 Issue 或 Pull Request
-- **报告问题** — 在 GitHub 上提 Issue
+- **添加新风格**：参照 `src/styles/_template.json` 新建一个风格 JSON，运行 `npm run validate` 校验，再运行 `npm run sync:skill` 把预设同步到 Skill 的离线脚本
+- **改了中文文案**：运行 `npm run subset:pixel -- --source <字体文件>`，重新生成复古像素风格用的中文点阵字体子集（[缝合像素字体](https://github.com/TakWolf/fusion-pixel-font)，SIL OFL 1.1，脚本开头写明了源字体的获取方式）
+- **改进网站**：提交 Issue 或 Pull Request
+- **报告问题**：在 GitHub 上提 Issue
 
 详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 

@@ -1,0 +1,45 @@
+{
+  "id": "editorial",
+  "name": "Editorial",
+  "nameZh": "杂志编辑",
+  "category": "modern",
+  "description": "Warm paper, ink typography and hairline rules — a print-magazine feel with oversized serif headlines",
+  "descriptionZh": "暖色纸张、墨色排版与细线分隔，超大衬线标题带来印刷杂志感",
+  "author": "core",
+  "references": ["https://fonts.google.com/specimen/Instrument+Serif"],
+  "variables": {
+    "--color-primary": "#1c1a17",
+    "--color-primary-hover": "#3b3630",
+    "--color-bg": "#f3efe6",
+    "--color-surface": "#fbf8f2",
+    "--color-text": "#1c1a17",
+    "--color-text-secondary": "#6b645a",
+    "--color-accent": "#d9481f",
+    "--color-border": "#d9d1c2",
+    "--border-radius": "2px",
+    "--border-width": "1px",
+    "--border-color": "#cfc6b5",
+    "--shadow-x": "0px",
+    "--shadow-y": "0px",
+    "--shadow-blur": "0px",
+    "--shadow-spread": "0px",
+    "--shadow-color": "transparent",
+    "--font-family": "'Instrument Serif', 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', Georgia, serif",
+    "--font-weight": "400",
+    "--font-weight-bold": "400",
+    "--font-size-base": "18px",
+    "--font-size-xl": "34px",
+    "--font-size-xxl": "68px",
+    "--line-height": "1.45",
+    "--backdrop-blur": "0px",
+    "--bg-opacity": "1"
+  },
+  "specialTuning": [
+    { "variable": "--font-size-xxl", "label": "Headline Size", "labelZh": "标题字号", "type": "range", "min": 32, "max": 96, "step": 2, "unit": "px" }
+  ],
+  "keyProperties": [
+    { "property": "font-family: serif display", "explanation": "高对比衬线字体做超大标题，是编辑风的核心" },
+    { "property": "border: 1px hairline", "explanation": "细线分隔代替阴影，结构清晰克制" },
+    { "property": "background: warm paper", "explanation": "米白纸张色降低屏幕感，更像印刷品" }
+  ]
+}

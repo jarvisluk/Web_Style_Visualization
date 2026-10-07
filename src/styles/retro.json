@@ -24,7 +24,7 @@
     "--shadow-blur": "16px",
     "--shadow-spread": "0px",
     "--shadow-color": "rgba(255, 0, 128, 0.5)",
-    "--font-family": "'Press Start 2P', 'ZCOOL QingKe HuangYou', 'Courier Prime', monospace",
+    "--font-family": "'Press Start 2P', 'Fusion Pixel SC', 'ZCOOL QingKe HuangYou', 'Courier Prime', monospace",
     "--font-weight": "400",
     "--font-weight-bold": "400",
     "--font-size-base": "12px",
@@ -57,7 +57,7 @@
     }
   ],
   "keyProperties": [
-    { "property": "font-family: pixel", "explanation": "像素字体是复古风的核心标识" },
+    { "property": "font-family: pixel", "explanation": "中西文都用点阵像素字体，这是复古风的核心标识" },
     { "property": "text-shadow: neon glow", "explanation": "霓虹发光效果营造 CRT 屏幕感" },
     { "property": "color: #00ff88", "explanation": "绿色终端色致敬早期计算机" }
   ]

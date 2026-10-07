@@ -23,9 +23,27 @@ Pick the **highest tier** your environment supports:
 
 | Tier | Method | Requires | Capabilities |
 |---|---|---|---|
+| 0 | WebMCP tools | Browser with `document.modelContext` | Native tool calls, no scripting |
 | 1 | Playwright / browser-use | Headless browser | Full API + screenshots + live preview |
 | 2 | URL parameters | User opens link | Apply preset or custom vars in browser |
 | 3 | Offline CSS generation | Python 3 | Run `build_url.py` to get CSS from built-in presets |
+
+### Tier 0 — WebMCP (in-browser agents)
+
+When the page is open in a browser that implements
+[WebMCP](https://webmachinelearning.github.io/webmcp/), the site registers
+these tools on `document.modelContext` — call them directly:
+
+| Tool | Input | Effect |
+|---|---|---|
+| `list_styles` | — | Preset ids, names, categories (read-only) |
+| `get_current_style` | — | Active style, resolved variables, overrides (read-only) |
+| `get_variable_definitions` | — | Every variable with its type and meaning (read-only) |
+| `apply_style` | `{ styleId }` | Switch to a preset, clearing overrides |
+| `set_variables` | `{ variables: { "--var": "value" } }` | Merge overrides; invalid values are rejected and listed |
+| `reset_style` | — | Drop overrides |
+| `export_css` | — | `:root { … }` CSS block (read-only) |
+| `get_share_url` | — | URL that reproduces the current look (read-only) |
 
 ### Tier 1 — Browser Automation (Playwright / browser-use)
 
@@ -153,15 +171,18 @@ Every method returns `{ success: boolean, data?: any, error?: string }`.
 |---|---|---|
 | `listStyles()` | — | Returns array of `{ id, name, category, description }` for all presets |
 | `applyStyle(styleId)` | `string` | Apply a preset style by id (e.g. `"flat"`, `"glassmorphism"`) |
-| `applyVariables(vars)` | `object` | Apply a CSS variables object `{ "--var": "value" }` |
+| `applyVariables(vars)` | `object` | Merge `{ "--var": "value" }` onto the current style; returns `applied` and `rejected` |
 | `getCurrentStyle()` | — | Current style info: `{ id, name, category, description, variables }` |
 | `getCurrentVariables()` | — | Current resolved CSS variable values as an object |
 | `exportCSS()` | — | Export current state as a `:root { ... }` CSS string |
 | `resetStyle()` | — | Reset overrides back to the current preset defaults |
-| `getVariableDefinitions()` | — | All supported variable names with descriptions |
+| `getVariableDefinitions()` | — | All supported variables: `{ name, type, group, description }` |
+| `getShareURL()` | — | URL that reopens the page with the current look |
 
 ## Available Preset Style IDs
 
+- `liquid-glass` — Liquid Glass (modern)
+- `editorial` — Editorial (modern)
 - `flat` — Flat Design (classic)
 - `material` — Material Design (classic)
 - `glassmorphism` — Glassmorphism (modern)
@@ -218,7 +239,7 @@ Every method returns `{ success: boolean, data?: any, error?: string }`.
 | Variable | Description |
 |---|---|
 | `--backdrop-blur` | Backdrop blur amount (e.g. `12px`) |
-| `--bg-opacity` | Background opacity (0–1) |
+| `--bg-opacity` | Surface opacity (0–1); below 1 reveals a colorful ambient backdrop |
 | `--glow-intensity` | Glow / neon intensity |
 | `--glow-color` | Glow / neon color |
 
@@ -281,12 +302,15 @@ window.addEventListener("message", (event) => {
 
 Supported `action` values match the API method names: `listStyles`,
 `applyStyle`, `applyVariables`, `getCurrentStyle`, `getCurrentVariables`,
-`exportCSS`, `resetStyle`, `getVariableDefinitions`.
+`exportCSS`, `resetStyle`, `getVariableDefinitions`, `getShareURL`.
 
 ## Typical Agent Workflow
 
 > Remember: **DO NOT** create or edit any local project files. Everything
 > happens via the API, URL parameters, or the built-in helper script.
+
+**If WebMCP tools are available (Tier 0):** call `list_styles` → `apply_style`
+or `set_variables` → `export_css` / `get_share_url`.
 
 **If browser automation is available (Tier 1):**
 

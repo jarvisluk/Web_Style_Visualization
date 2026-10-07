@@ -1,0 +1,42 @@
+{
+  "id": "liquid-glass",
+  "name": "Liquid Glass",
+  "nameZh": "液态玻璃",
+  "category": "modern",
+  "description": "Bright, refractive glass layers floating over vivid color, with soft depth and pill shapes",
+  "descriptionZh": "明亮通透的玻璃层悬浮在鲜艳色彩之上，柔和纵深与胶囊圆角",
+  "author": "core",
+  "references": ["https://developer.apple.com/design/human-interface-guidelines/materials"],
+  "variables": {
+    "--color-primary": "#0a84ff",
+    "--color-primary-hover": "#0066d6",
+    "--color-bg": "#e8edf5",
+    "--color-surface": "rgba(255, 255, 255, 0.42)",
+    "--color-text": "#0b1220",
+    "--color-text-secondary": "#475569",
+    "--color-accent": "#ff375f",
+    "--color-border": "rgba(255, 255, 255, 0.7)",
+    "--border-radius": "28px",
+    "--border-width": "1px",
+    "--border-color": "rgba(255, 255, 255, 0.7)",
+    "--shadow-x": "0px",
+    "--shadow-y": "12px",
+    "--shadow-blur": "40px",
+    "--shadow-spread": "0px",
+    "--shadow-color": "rgba(15, 23, 42, 0.12)",
+    "--font-family": "-apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif",
+    "--font-weight": "400",
+    "--font-weight-bold": "650",
+    "--backdrop-blur": "24px",
+    "--bg-opacity": "0.35"
+  },
+  "specialTuning": [
+    { "variable": "--backdrop-blur", "label": "Refraction Blur", "labelZh": "折射模糊", "type": "range", "min": 0, "max": 48, "step": 1, "unit": "px" },
+    { "variable": "--bg-opacity", "label": "Backdrop Calmness", "labelZh": "背景平静度", "type": "range", "min": 0, "max": 1, "step": 0.05, "unit": "" }
+  ],
+  "keyProperties": [
+    { "property": "backdrop-filter: blur(24px) saturate(1.8)", "explanation": "高饱和模糊让下层色彩透出，形成液态折射感" },
+    { "property": "border: 1px solid rgba(255,255,255,.7)", "explanation": "亮边模拟玻璃边缘的高光" },
+    { "property": "border-radius: 28px / 999px", "explanation": "大圆角与胶囊形按钮，形体柔和" }
+  ]
+}

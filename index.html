@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https:; manifest-src 'self';" />
+  <meta name="color-scheme" content="light dark" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; manifest-src 'self';" />
   <title>Web Style Visualisation</title>
   <meta name="description" content="Interactive web style visualization tool: choose a design style, switch site UI live, fine‑tune parameters, and export CSS." />
   <meta property="og:title" content="Web Style Visualisation" />
@@ -18,48 +19,24 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Courier+Prime:wght@400;700&family=Press+Start+2P&family=ZCOOL+QingKe+HuangYou&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Inter:wght@300..900&family=Instrument+Serif:ital@0;1&family=Roboto:wght@300;400;500;700&family=Courier+Prime:wght@400;700&family=Press+Start+2P&family=ZCOOL+QingKe+HuangYou&family=Noto+Sans+SC:wght@100..900&family=Noto+Serif+SC:wght@200..900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div id="app">
-    <!-- Navbar -->
-    <nav id="navbar" class="navbar"></nav>
+  <div class="studio">
+    <header id="topbar" class="topbar"></header>
 
-    <!-- AI Chat -->
-    <section id="ai-chat" class="section-block" style="width:100%;max-width:800px;margin:var(--spacing-lg) auto;padding:0 var(--spacing-xl)"></section>
+    <aside id="style-rail" class="rail"></aside>
 
-    <!-- Style Selector -->
-    <section id="style-selector" class="style-selector-section"></section>
-
-    <!-- Main Content Area -->
-    <main class="main-content">
-      <div class="preview-area">
-        <!-- Hero -->
-        <section id="hero" class="section-block"></section>
-
-        <!-- Cards -->
-        <section id="cards" class="section-block"></section>
-
-        <!-- Buttons -->
-        <section id="buttons" class="section-block"></section>
-
-        <!-- Stats -->
-        <section id="stats" class="section-block"></section>
-
-        <!-- Code Panel (inline) -->
-        <section id="code-panel" class="code-panel-inline section-block"></section>
+    <main class="stage">
+      <div id="stage-toolbar" class="stage-toolbar"></div>
+      <div id="canvas-frame" class="canvas-frame">
+        <div id="canvas" class="canvas"></div>
       </div>
     </main>
 
-    <!-- Tuning Panel (sidebar) -->
-    <aside id="tuning-panel" class="tuning-panel open"></aside>
-    <button id="tuning-toggle" class="tuning-toggle" aria-label="Toggle tuning panel">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-      </svg>
-    </button>
+    <aside id="inspector" class="inspector" aria-label="Inspector"></aside>
+    <div id="scrim" class="scrim"></div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

@@ -24,7 +24,7 @@
     "--shadow-blur": "0px",
     "--shadow-spread": "0px",
     "--shadow-color": "#000000",
-    "--font-family": "'Courier Prime', 'Noto Serif SC', monospace",
+    "--font-family": "'Courier Prime', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', monospace",
     "--font-weight": "400",
     "--font-weight-bold": "700",
     "--backdrop-blur": "0px",
@@ -55,6 +55,6 @@
   "keyProperties": [
     { "property": "border: 3px solid #000", "explanation": "粗边框是粗犷主义的视觉标识" },
     { "property": "box-shadow: hard offset", "explanation": "硬阴影（blur=0）强化层次感" },
-    { "property": "font-family: monospace", "explanation": "等宽字体增加原始感" }
+    { "property": "font-family: monospace + 黑体", "explanation": "西文用等宽字体、中文用粗黑体，制造原始的冲击感" }
   ]
 }

@@ -7,13 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "validate": "node scripts/validate-styles.js"
+    "validate": "node scripts/validate-styles.js",
+    "sync:skill": "node scripts/sync-skill-presets.js",
+    "subset:pixel": "uv run --with fonttools --with brotli scripts/subset-pixel-font.py"
   },
   "devDependencies": {
     "sharp": "^0.34.5",
     "vite": "^5.4.0"
-  },
-  "dependencies": {
-    "prismjs": "^1.29.0"
   }
 }

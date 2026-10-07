@@ -1,28 +1,23 @@
-import { setVariable, resetToStyle, getCurrentStyle, getCurrentVariables, onChange } from "../utils/css-var-manager.js";
-import { t, getLang, onLangChange } from "../utils/i18n.js";
+import { setVariable as setStyleVariable, getCurrentStyle, getCurrentVariables, getComputedVariable, onChange } from "../utils/css-var-manager.js";
+import { t, getLang, getStyleName, onLangChange } from "../utils/i18n.js";
+import { LATIN_FONTS, CJK_FONTS, SYSTEM_FONTS, primaryFamily, withCJKFallback } from "../utils/fonts.js";
+
+// Edits made from this panel must not rebuild it mid-drag; external changes
+// (preset switch, reset, agent calls) should.
+let editingFromPanel = false;
+function setVariable(name, value) {
+  editingFromPanel = true;
+  try {
+    setStyleVariable(name, value);
+  } finally {
+    editingFromPanel = false;
+  }
+}
 
 // --- Font state (persists across panel re-renders) ---
 let cachedSystemFonts = null;   // null = not yet detected
 let customFontName = null;      // name of user-uploaded font
 let customFontValue = null;     // CSS value for --font-family
-
-const GOOGLE_FONTS = [
-  "'Inter', sans-serif",
-  "'Roboto', sans-serif",
-  "'Courier Prime', monospace",
-  "'Press Start 2P', monospace",
-  "system-ui, sans-serif",
-];
-
-const FALLBACK_SYSTEM_FONTS = [
-  "Georgia, serif",
-  "'Helvetica Neue', Arial, sans-serif",
-  "'Times New Roman', Times, serif",
-  "'Courier New', Courier, monospace",
-  "Menlo, Monaco, monospace",
-  "'PingFang SC', 'Microsoft YaHei', sans-serif",
-  "system-ui, -apple-system, sans-serif",
-];
 
 // --- System font detection ---
 async function detectSystemFonts() {
@@ -72,7 +67,9 @@ export function renderTuningPanel(container) {
   panelContainer = container;
   const render = () => buildPanel();
   render();
-  onChange(render);
+  onChange(() => {
+    if (!editingFromPanel) render();
+  });
   onLangChange(render);
 }
 
@@ -84,43 +81,14 @@ function buildPanel() {
 
   panelContainer.innerHTML = "";
 
-  // Header
-  const header = document.createElement("div");
-  header.className = "tuning-panel-header";
-  header.innerHTML = `
-    <span class="tuning-panel-title">${t("panel.tuning")}</span>
-    <button class="tuning-close" id="tuning-close-btn">×</button>
-  `;
-  panelContainer.appendChild(header);
-
-  header.querySelector("#tuning-close-btn").addEventListener("click", () => {
-    panelContainer.classList.remove("open");
-    document.body.classList.remove("tuning-open");
-  });
-
-// Common sections
-  getCommonTuning().forEach((section) => {
-    renderSection(panelContainer, section.section, section.controls, vars);
-  });
-
-  // Special tuning for current style
+  // Style-specific controls first: they are what makes the style distinct.
   if (style && style.specialTuning && style.specialTuning.length > 0) {
-    const specialTitle = t("tuning.special").replace("✨ Special", `✨ ${style.name} Special`).replace("✨ 专属特色", `✨ ${style.nameZh || style.name} 专属特色`);
-    renderSection(panelContainer, specialTitle, style.specialTuning, vars);
+    const specialTitle = `${t("tuning.special")} · ${getStyleName(style)}`;
+    renderSection(panelContainer, specialTitle, style.specialTuning, vars, true);
   }
 
-  // Actions
-  const actions = document.createElement("div");
-  actions.className = "tuning-actions";
-  actions.innerHTML = `
-    <button class="btn btn-ghost btn-sm" id="tuning-reset-btn" style="flex:1">${t("tuning.reset")}</button>
-  `;
-  panelContainer.appendChild(actions);
-
-  actions.querySelector("#tuning-reset-btn").addEventListener("click", () => {
-    resetToStyle();
-    customFontName = null;
-    customFontValue = null;
+  getCommonTuning().forEach((section) => {
+    renderSection(panelContainer, section.section, section.controls, vars);
   });
 }
 
@@ -128,63 +96,58 @@ function buildPanel() {
 function buildFontSelect(currentValue) {
   const select = document.createElement("select");
   select.className = "tuning-select tuning-font-select";
+  const current = primaryFamily(currentValue);
+  const zh = getLang() === "zh";
+  let matched = false;
 
-  // Google Fonts group
-  const googleGroup = document.createElement("optgroup");
-  googleGroup.label = t("tuning.googleFonts");
-  GOOGLE_FONTS.forEach((font) => {
-    const opt = document.createElement("option");
-    opt.value = font;
-    opt.textContent = font.split(",")[0].replace(/'/g, "").trim();
-    opt.style.fontFamily = font;
-    if (currentValue && currentValue.includes(font.split(",")[0].replace(/'/g, "").trim())) {
-      opt.selected = true;
-    }
-    googleGroup.appendChild(opt);
-  });
-  select.appendChild(googleGroup);
+  const addGroup = (label, fonts) => {
+    if (!fonts.length) return;
+    const group = document.createElement("optgroup");
+    group.label = label;
+    fonts.forEach((font) => {
+      const opt = document.createElement("option");
+      opt.value = font.value;
+      opt.textContent = zh && font.labelZh ? `${font.labelZh} · ${font.label}` : font.label;
+      opt.style.fontFamily = font.value;
+      if (!matched && primaryFamily(font.value) === current) {
+        opt.selected = true;
+        matched = true;
+      }
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  };
 
-  // System Fonts group
-  const systemGroup = document.createElement("optgroup");
-  systemGroup.label = t("tuning.systemFonts");
-  const systemList = cachedSystemFonts || FALLBACK_SYSTEM_FONTS;
-  systemList.forEach((font) => {
-    const opt = document.createElement("option");
-    // If from queryLocalFonts, it's a bare family name; wrap it for CSS
-    const isDetected = cachedSystemFonts !== null && cachedSystemFonts === systemList;
-    const cssValue = isDetected ? `'${font}', sans-serif` : font;
-    const displayName = isDetected ? font : font.split(",")[0].replace(/'/g, "").trim();
-    opt.value = cssValue;
-    opt.textContent = displayName;
-    opt.style.fontFamily = cssValue;
-    if (currentValue && currentValue.includes(displayName)) {
-      opt.selected = true;
-    }
-    systemGroup.appendChild(opt);
-  });
-  select.appendChild(systemGroup);
+  const systemFonts = cachedSystemFonts
+    ? cachedSystemFonts.map((family) => ({ label: family, value: withCJKFallback(family) }))
+    : SYSTEM_FONTS;
+  const uploaded = customFontName && customFontValue ? [{ label: customFontName, value: customFontValue }] : [];
 
-  // Custom font group (if one has been uploaded)
-  if (customFontName && customFontValue) {
-    const customGroup = document.createElement("optgroup");
-    customGroup.label = t("tuning.customFont");
+  // Chinese readers see Chinese faces first.
+  const groups = [
+    [t("tuning.googleFonts"), LATIN_FONTS],
+    [t("tuning.cjkFonts"), CJK_FONTS],
+  ];
+  if (zh) groups.reverse();
+  groups.forEach(([label, fonts]) => addGroup(label, fonts));
+  addGroup(t("tuning.systemFonts"), systemFonts);
+  addGroup(t("tuning.customFont"), uploaded);
+
+  // Preset stacks that aren't in the list still show up as the selection.
+  if (!matched && currentValue) {
     const opt = document.createElement("option");
-    opt.value = customFontValue;
-    opt.textContent = customFontName;
-    opt.style.fontFamily = customFontValue;
-    if (currentValue && currentValue.includes(customFontName)) {
-      opt.selected = true;
-    }
-    customGroup.appendChild(opt);
-    select.appendChild(customGroup);
+    opt.value = currentValue;
+    opt.textContent = currentValue.split(",")[0].replace(/['"]/g, "").trim();
+    opt.selected = true;
+    select.prepend(opt);
   }
 
   return select;
 }
 
-function renderSection(parent, title, controls, vars) {
+function renderSection(parent, title, controls, vars, highlight = false) {
   const section = document.createElement("div");
-  section.className = "tuning-section";
+  section.className = highlight ? "tuning-section tuning-section-special" : "tuning-section";
 
   const titleEl = document.createElement("div");
   titleEl.className = "tuning-section-title";
@@ -195,7 +158,7 @@ function renderSection(parent, title, controls, vars) {
     const row = document.createElement("div");
     row.className = "tuning-row";
 
-    const currentValue = vars[ctrl.variable] || "";
+    const currentValue = vars[ctrl.variable] || getComputedVariable(ctrl.variable) || "";
     const lang = getLang();
     const labelText = (lang === "zh" && ctrl.labelZh) ? ctrl.labelZh : ctrl.label;
 
@@ -214,7 +177,8 @@ function renderSection(parent, title, controls, vars) {
         row.querySelector(".tuning-value").textContent = e.target.value;
       });
     } else if (ctrl.type === "range") {
-      const numVal = parseFloat(currentValue) || ctrl.min || 0;
+      const parsed = parseFloat(currentValue);
+      const numVal = Number.isFinite(parsed) ? parsed : Math.max(ctrl.min ?? 0, 0);
       row.innerHTML = `
         <div class="tuning-label">
           <span>${labelText}</span>
@@ -261,25 +225,25 @@ function renderSection(parent, title, controls, vars) {
       // Detect system fonts button
       const detectBtn = document.createElement("button");
       detectBtn.className = "tuning-font-btn";
-      detectBtn.textContent = cachedSystemFonts ? `✓ ${cachedSystemFonts.length} ${t("tuning.detected")}` : `🔍 ${t("tuning.detectFonts")}`;
+      detectBtn.textContent = cachedSystemFonts ? `${cachedSystemFonts.length} ${t("tuning.detected")}` : t("tuning.detectFonts");
       if (!window.queryLocalFonts) {
         detectBtn.title = t("tuning.notSupported");
         detectBtn.style.opacity = "0.5";
       }
       detectBtn.addEventListener("click", async () => {
         if (!window.queryLocalFonts) {
-          detectBtn.textContent = `⚠ ${t("tuning.notSupported")}`;
+          detectBtn.textContent = t("tuning.notSupported");
           setTimeout(() => {
-            detectBtn.textContent = `🔍 ${t("tuning.detectFonts")}`;
+            detectBtn.textContent = t("tuning.detectFonts");
           }, 2000);
           return;
         }
-        detectBtn.textContent = `⏳ ${t("tuning.detecting")}`;
+        detectBtn.textContent = t("tuning.detecting");
         detectBtn.disabled = true;
         const fonts = await detectSystemFonts();
         if (fonts && fonts.length > 0) {
           cachedSystemFonts = fonts;
-          detectBtn.textContent = `✓ ${fonts.length} ${t("tuning.detected")}`;
+          detectBtn.textContent = `${fonts.length} ${t("tuning.detected")}`;
           // Rebuild the select with newly detected fonts
           const newSelect = buildFontSelect(vars[ctrl.variable] || "");
           row.replaceChild(newSelect, row.querySelector("select"));
@@ -287,7 +251,7 @@ function renderSection(parent, title, controls, vars) {
             setVariable(ctrl.variable, e.target.value);
           });
         } else {
-          detectBtn.textContent = `⚠ ${t("tuning.notSupported")}`;
+          detectBtn.textContent = t("tuning.notSupported");
         }
         detectBtn.disabled = false;
       });
@@ -296,7 +260,7 @@ function renderSection(parent, title, controls, vars) {
       // Upload font button
       const uploadBtn = document.createElement("button");
       uploadBtn.className = "tuning-font-btn";
-      uploadBtn.textContent = `📁 ${t("tuning.uploadFont")}`;
+      uploadBtn.textContent = t("tuning.uploadFont");
       const fileInput = document.createElement("input");
       fileInput.type = "file";
       fileInput.accept = ".ttf,.otf,.woff,.woff2";
@@ -312,7 +276,7 @@ function renderSection(parent, title, controls, vars) {
           document.fonts.add(face);
 
           customFontName = fontName;
-          customFontValue = `'${fontName}', sans-serif`;
+          customFontValue = withCJKFallback(fontName);
           setVariable(ctrl.variable, customFontValue);
 
           // Rebuild select to include the custom font
@@ -325,7 +289,7 @@ function renderSection(parent, title, controls, vars) {
           // Show status
           statusEl.textContent = `${t("tuning.fontLoaded")} ${fontName}`;
         } catch {
-          statusEl.textContent = "⚠ Failed to load font";
+          statusEl.textContent = t("tuning.fontFailed");
           setTimeout(() => { statusEl.textContent = ""; }, 3000);
         }
         fileInput.value = "";
@@ -359,6 +323,10 @@ function toHexSafe(cssColor) {
       ? `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`
       : trimmed;
   }
-  // For rgba / named colors, fallback
+  // rgb()/rgba(): drop alpha, the picker only handles opaque hex.
+  const rgb = trimmed.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i);
+  if (rgb) {
+    return "#" + rgb.slice(1, 4).map((n) => Math.min(255, +n).toString(16).padStart(2, "0")).join("");
+  }
   return "#000000";
 }

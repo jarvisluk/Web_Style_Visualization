@@ -78,6 +78,22 @@ export function renderStyleSelector(container) {
     syncActive();
   };
 
+  // Scroll only the rail itself. scrollIntoView would also scroll every ancestor,
+  // including the page that embeds the studio in an iframe.
+  const revealInRail = (item) => {
+    let rail = item.parentElement;
+    while (rail && rail !== document.body) {
+      const { overflowX, overflowY } = getComputedStyle(rail);
+      if (/(auto|scroll)/.test(overflowX + overflowY)) break;
+      rail = rail.parentElement;
+    }
+    if (!rail || rail === document.body) return;
+    const r = item.getBoundingClientRect();
+    const c = rail.getBoundingClientRect();
+    const top = r.top < c.top ? r.top - c.top : r.bottom > c.bottom ? r.bottom - c.bottom : 0;
+    rail.scrollBy({ top, left: r.left + r.width / 2 - (c.left + c.width / 2) });
+  };
+
   const syncActive = () => {
     const activeId = getCurrentStyleId();
     container.querySelectorAll(".style-item").forEach((item) => {
@@ -86,7 +102,7 @@ export function renderStyleSelector(container) {
       item.setAttribute("aria-selected", String(active));
       if (active && !item.dataset.seen) {
         item.dataset.seen = "1";
-        item.scrollIntoView({ block: "nearest", inline: "center" });
+        revealInRail(item);
       }
     });
   };
